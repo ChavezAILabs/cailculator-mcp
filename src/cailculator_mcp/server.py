@@ -125,7 +125,7 @@ class MCPServer:
             "protocolVersion": "2024-11-05",
             "serverInfo": {
                 "name": "cailculator-mcp",
-                "version": "0.2.0"
+                "version": "1.4.3"
             },
             "capabilities": {
                 "tools": {}
