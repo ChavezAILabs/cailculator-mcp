@@ -322,9 +322,14 @@ class MCPServer:
                     logger.error(f"Invalid JSON: {e}")
                     continue
                 
+                # JSON-RPC notifications have no "id" — do not send a response
+                if "id" not in request:
+                    logger.info(f"Notification received (no response sent): {request.get('method')}")
+                    continue
+
                 # Handle request
                 response = await self.handle_request(request)
-                
+
                 # Write response to stdout
                 response_line = json.dumps(response)
                 print(response_line, flush=True)
