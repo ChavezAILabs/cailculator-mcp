@@ -72,9 +72,9 @@ These patterns exhibit:
 
 ### Research Foundation
 
-Built on systematic computational enumeration published at DOI: [10.5281/zenodo.17402496](https://zenodo.org/records/17402496) - Framework-Independent Zero Divisor Patterns in Higher-Dimensional Cayley-Dickson Algebras: Discovery and Verification of The Canonical Six. Partial formal verification in Lean 4 (822 lines, 83% coverage) provides machine-verified mathematical proofs of core structural claims.
+Built on systematic computational enumeration published at DOI: [10.5281/zenodo.17402495](https://doi.org/10.5281/zenodo.17402495) - Framework-Independent Zero Divisor Patterns in Higher-Dimensional Cayley-Dickson Algebras: Discovery and Verification of The Canonical Six. Full formal verification in Lean 4 (zero sorry stubs) provides machine-verified mathematical proofs of all core structural claims, including E8 first shell membership and Weyl orbit unification of the Canonical Six P-vectors. Lean 4 verification also covers the Chavez Transform operator itself: convergence (the transform of any bounded, integrable function is finite) and stability (|C[f]| ≤ M · ‖f‖₁, where M depends on the kernel parameters).
 
-Recent work has identified connections to E8 exceptional Lie algebra structure (October 2025 discoveries) with modular development integrated. Ongoing research will continue further development into 512D.
+Ongoing research will continue further development into 512D.
 
 ## System Requirements
 
@@ -574,7 +574,7 @@ Interested in applying these tools to AGI research? Contact Paul Chavez at iknow
 ## Contact
 
 **Research Collaboration:** paul@chavezailabs.com
-**GitHub:** https://github.com/pchavez2029/cailculator-mcp
+**GitHub:** https://github.com/ChavezAILabs/cailculator-mcp
 **General Inquiries:** iknowpi@gmail.com
 
 ---
