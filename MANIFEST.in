@@ -1,0 +1,6 @@
+include README.md
+include CHANGELOG.md
+include LICENSE
+recursive-include lean *.lean
+recursive-include assets/templates *.json
+recursive-include src/cailculator_mcp *.py

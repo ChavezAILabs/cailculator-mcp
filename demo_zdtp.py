@@ -9,6 +9,11 @@ high-dimensional data has robust structure or is in flux.
 This demo shows how different data characteristics produce
 different convergence scores, enabling data integrity verification.
 
+Mathematical Foundation:
+The protocol is a discrete realization of the Chavez Transform:
+𝒞[f](P,Q,α,d) = ∫_D f(x) · K_Z(P,Q,x) · exp(-α‖x‖²) · Ω_d(x) dx
+Where the domain D is a parametric choice (Default: [-5.0, 5.0]).
+
 Run: python demo_zdtp.py
 """
 
@@ -249,6 +254,9 @@ def main():
 
     print("\n  The ZDTP convergence score measures structural stability")
     print("  by comparing how data behaves across 6 mathematical gateways.")
+    print("\n  Mathematical Foundation (Chavez Transform):")
+    print("  The full transform operates over a parametric domain D.")
+    print("  Default domain D = [-5.0, 5.0] is maintained for implementation.")
     print("\n  HIGH convergence  = robust structure, stable data")
     print("  LOW convergence   = structural shift, data in flux")
 

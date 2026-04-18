@@ -14,6 +14,7 @@ _patterns_module = None
 _hypercomplex_module = None
 _clifford_module = None
 _numpy_module = None
+_visualizations_module = None
 
 def _get_numpy():
     global _numpy_module
@@ -21,6 +22,13 @@ def _get_numpy():
         import numpy as np
         _numpy_module = np
     return _numpy_module
+
+def _get_visualizations():
+    global _visualizations_module
+    if _visualizations_module is None:
+        from . import visualizations
+        _visualizations_module = visualizations
+    return _visualizations_module
 
 def _get_transforms():
     global _transforms_module
@@ -1487,6 +1495,7 @@ async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
         import os
         import datetime
+        import base64
         from pathlib import Path
 
         # Parse arguments
@@ -1500,10 +1509,11 @@ async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
         logger.info(f"Creating {vis_type} visualization in {output_format} format")
 
-        # Create output directory — use env var or default to /mnt/user-data/outputs/
+        # Create output directory — use env var or default to project assets
+        # On Windows, /mnt/user-data/outputs/ is often inaccessible or non-existent
         base_output_dir = os.environ.get(
             "CAILCULATOR_OUTPUT_DIR",
-            "/mnt/user-data/outputs/"
+            str(Path.cwd() / "assets")
         )
         output_dir = str(Path(base_output_dir) / "visualizations")
         os.makedirs(output_dir, exist_ok=True)
@@ -1533,18 +1543,24 @@ async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
         handler = visualization_handlers[vis_type]
         result = await handler(data, output_dir, timestamp, output_format, style)
 
-        # Post-save verification: check that the file actually exists on disk
+        # Post-save verification and image data extraction
         for path_key in ("static_path", "interactive_path"):
             file_path = result.get(path_key)
             if file_path:
-                abs_path = str(Path(file_path).resolve())
-                if os.path.exists(abs_path):
-                    result[path_key] = abs_path
+                path_obj = Path(file_path)
+                # If path is relative, make it absolute relative to current directory
+                if not path_obj.is_absolute():
+                    path_obj = (Path.cwd() / path_obj).resolve()
+                
+                if path_obj.exists():
+                    result[path_key] = str(path_obj)
+                    
+                    # Extract base64 image data for MCP client rendering
+                    if path_key == "static_path" and path_obj.suffix.lower() == ".png":
+                        with open(path_obj, "rb") as f:
+                            result["image_data"] = base64.b64encode(f.read()).decode("utf-8")
                 else:
-                    return {
-                        "success": False,
-                        "error": f"Visualization file was not written successfully: {abs_path}"
-                    }
+                    logger.warning(f"Visualization file not found at: {path_obj}")
 
         # Add metadata
         result["visualization_type"] = vis_type

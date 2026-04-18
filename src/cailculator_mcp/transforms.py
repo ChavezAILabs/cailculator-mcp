@@ -8,26 +8,45 @@ how Fourier Transforms work in frequency space.
 Definition:
     For f in L^1(D), D subset of R^n:
 
-    C[f] = integral_D f(x) * K_Z(P,Q,x) * Omega_d(x) dx
+    C[f] = integral_D f(x) * K_Z(P,Q,x) * exp(-alpha * ||x||^2) * Omega_d(x) dx
 
     Where:
         K_Z(P,Q,x) = |P·x|² + |x·Q|² + |Q·x|² + |x·P|²
         (P,Q) = bilateral zero divisor pairs from the Canonical Six
-        P × Q = 0 (bilateral zero divisor property)
-        Omega_d(x) = (1 + ||x||^2)^(-d/2)
-        alpha > 0 = convergence parameter for distance decay
+        P × Q = 0 AND Q × P = 0 (bilateral zero divisor property)
+        exp(-alpha * ||x||^2) = exponential distance decay, alpha > 0
+        Omega_d(x) = (1 + ||x||^2)^(-d/2) = dimensional weighting
 
-The Canonical Six:
-    1. (e_1 + e_14) × (e_3 + e_12) = 0
-    2. (e_3 + e_12) × (e_5 + e_10) = 0
-    3. (e_4 + e_11) × (e_6 + e_9) = 0
-    4. (e_1 - e_14) × (e_3 - e_12) = 0
-    5. (e_1 - e_14) × (e_5 + e_10) = 0
-    6. (e_2 - e_13) × (e_6 + e_9) = 0
+    Full kernel: K(P,Q,x,alpha,d) = K_Z(P,Q,x) * exp(-alpha * ||x||^2) * Omega_d(x)
 
-Theorems:
-    1. Convergence: For bounded f in L^1(D) and alpha > 0, C[f] converges absolutely
-    2. Stability Bounds: |C[f]| <= M * ||f||_1 where M = (||P||^2 + ||Q||^2) * sqrt(pi/alpha)^n
+    Note: The three-factor kernel structure ensures:
+        - K_Z encodes the bilateral zero divisor geometry (algebraic structure)
+        - exp(-alpha * ||x||^2) ensures rapid decay at infinity (integrability)
+        - Omega_d(x) provides additional dimensional decay control
+
+The Canonical Six bilateral zero divisor pairs (sedenion indices):
+    1. P=(e_1 + e_14), Q=(e_3 + e_12):  P×Q = 0 AND Q×P = 0
+    2. P=(e_3 + e_12), Q=(e_5 + e_10):  P×Q = 0 AND Q×P = 0
+    3. P=(e_4 + e_11), Q=(e_6 + e_9):   P×Q = 0 AND Q×P = 0
+    4. P=(e_1 - e_14), Q=(e_3 - e_12):  P×Q = 0 AND Q×P = 0
+    5. P=(e_1 - e_14), Q=(e_5 + e_10):  P×Q = 0 AND Q×P = 0
+    6. P=(e_2 - e_13), Q=(e_6 + e_9):   P×Q = 0 AND Q×P = 0
+
+Theorems (formally verified in ChavezTransform_genuine.lean, April 2026):
+    1. Convergence: For bounded f in L^1(D) and alpha > 0, C[f] converges absolutely.
+       Proof: unconditional on P*Q=0. Axiom footprint: [propext, Classical.choice, Quot.sound]
+    2. Stability Bounds: |C[f]| <= stability_constant * ||f||_1
+       where stability_constant(P,Q,alpha) = 2*(||P||^2 + ||Q||^2) / (alpha * exp(1))
+       Proved constant is tighter than the earlier estimate (||P||^2+||Q||^2)*sqrt(pi/alpha).
+       Proof: exact K_Z formula on scalar inputs + sharp bound t*exp(-t) <= 1/e.
+       Axiom footprint: [propext, Classical.choice, Quot.sound]
+
+Note on domain: The integration domain D is parametric. The default (-5.0, 5.0)
+used in transform_1d and transform_nd is a numerical convenience, not a
+mathematical constant of the transform definition.
+
+GitHub: https://github.com/ChavezAILabs/CAIL-rh-investigation
+Zenodo: https://doi.org/10.5281/zenodo.17402495
 """
 
 import numpy as np
@@ -78,19 +97,29 @@ class ChavezTransform:
 
     def zero_divisor_kernel(self, P: Pathion, Q: Pathion, x: np.ndarray) -> float:
         """
-        Compute the bilateral zero divisor kernel K_Z(P, Q, x).
+        Compute the bilateral zero divisor kernel K_Z(P, Q, x) with distance decay.
+
+        Full kernel component: K_Z(P,Q,x) * exp(-alpha * ||x||^2)
 
         K_Z(P,Q,x) = |P·x|² + |x·Q|² + |Q·x|² + |x·P|²
 
-        Where P and Q are bilateral zero divisor pairs (P × Q = 0) from the Canonical Six.
+        Where P and Q are bilateral zero divisor pairs (P×Q = 0 AND Q×P = 0)
+        from the Canonical Six. The bilateral structure (all four products) is
+        required because Cayley-Dickson multiplication is non-commutative:
+        P·x ≠ x·P in general.
+
+        Note: This method returns K_Z * exp(-alpha*||x||^2). The dimensional
+        weighting Omega_d(x) = (1 + ||x||^2)^(-d/2) is applied separately in
+        the integrand() method. The full kernel is:
+            K(P,Q,x,alpha,d) = K_Z(P,Q,x) * exp(-alpha*||x||^2) * Omega_d(x)
 
         Args:
-            P: First pathion element of zero divisor pair
-            Q: Second pathion element of zero divisor pair
+            P: First pathion element of bilateral zero divisor pair
+            Q: Second pathion element of bilateral zero divisor pair
             x: Point in R^n where to evaluate kernel
 
         Returns:
-            Kernel value at x with distance decay
+            K_Z(P,Q,x) * exp(-alpha * ||x||^2)
         """
         # Convert x to Pathion
         x_coeffs = np.zeros(32)
@@ -130,17 +159,22 @@ class ChavezTransform:
 
     def integrand(self, x: np.ndarray, f: Callable, P: Pathion, Q: Pathion, d: int) -> float:
         """
-        Compute the integrand f(x) * K_Z(P,Q,x) * Omega_d(x).
+        Compute the full integrand: f(x) * K_Z(P,Q,x) * exp(-alpha*||x||^2) * Omega_d(x)
+
+        This is the complete three-factor kernel:
+            f(x)                         — function to transform
+            K_Z(P,Q,x)*exp(-alpha*||x||²) — bilateral kernel with decay (from zero_divisor_kernel)
+            Omega_d(x)                   — dimensional weighting (from dimensional_weighting)
 
         Args:
             x: Point in R^n
             f: Function to transform
-            P: First pathion of zero divisor pair
-            Q: Second pathion of zero divisor pair
+            P: First pathion of bilateral zero divisor pair
+            Q: Second pathion of bilateral zero divisor pair
             d: Dimension parameter for weighting
 
         Returns:
-            Integrand value at x
+            f(x) * K_Z(P,Q,x) * exp(-alpha*||x||^2) * (1+||x||^2)^(-d/2)
         """
         f_val = f(x)
         kernel_val = self.zero_divisor_kernel(P, Q, x)
@@ -158,7 +192,9 @@ class ChavezTransform:
             P: First pathion of zero divisor pair
             Q: Second pathion of zero divisor pair
             d: Dimension parameter
-            domain: Integration domain (a, b)
+            domain: Integration domain (a, b). Default (-5.0, 5.0) is a numerical
+                    convenience. The canonical mathematical definition uses parametric
+                    D = [a,b] — see ChavezTransform_genuine.lean for the formal statement.
 
         Returns:
             Transform value C[f]
@@ -294,7 +330,10 @@ class ChavezTransform:
         """
         Verify Theorem 2: Stability bounds.
 
-        |C[f]| <= M * ||f||_1 where M = ||P||^2 * sqrt(pi/alpha)^n
+        |C[f]| <= M * ||f||_1
+        where M = 2*(||P||^2 + ||Q||^2) / (alpha * exp(1))
+        Formally proved in ChavezTransform_genuine.lean (April 2026).
+        Axiom footprint: [propext, Classical.choice, Quot.sound]
 
         Args:
             f: Test function
@@ -307,11 +346,14 @@ class ChavezTransform:
         Returns:
             Dictionary with stability analysis results
         """
-        # Compute M (stability constant)
-        n = 1  # For 1D test
+        # Proved stability constant from ChavezTransform_genuine.lean:
+        #   stability_constant(P,Q,alpha) = 2*(||P||^2 + ||Q||^2) / (alpha * exp(1))
+        # Derived from exact K_Z formula on scalar inputs + sharp bound t*exp(-t) <= 1/e.
+        # Supersedes earlier estimate (||P||^2 + ||Q||^2) * sqrt(pi/alpha).
+        import math
         P_norm = abs(P)
         Q_norm = abs(Q)
-        M = (P_norm ** 2 + Q_norm ** 2) * ((np.pi / self.alpha) ** (n / 2))
+        M = 2.0 * (P_norm ** 2 + Q_norm ** 2) / (self.alpha * math.e)
 
         # Compute L1 norm of f
         def abs_f(x_scalar):
@@ -454,31 +496,41 @@ class ChavezTransform:
 
 def create_canonical_six_pattern(pattern_id: int) -> Tuple[Pathion, Pathion]:
     """
-    Create a Pathion pair corresponding to one of the Canonical Six zero divisor patterns.
+    Create a Pathion pair corresponding to one of the Canonical Six bilateral
+    zero divisor patterns.
 
-    The Canonical Six are the fundamental bilateral zero divisor pairs in sedenions (16D):
-    1. (e_1 + e_14) × (e_3 + e_12) = 0
-    2. (e_3 + e_12) × (e_5 + e_10) = 0
-    3. (e_4 + e_11) × (e_6 + e_9) = 0
-    4. (e_1 - e_14) × (e_3 - e_12) = 0
-    5. (e_1 - e_14) × (e_5 + e_10) = 0
-    6. (e_2 - e_13) × (e_6 + e_9) = 0
+    The Canonical Six are the fundamental bilateral zero divisor pairs in
+    sedenions (16D Cayley-Dickson algebra). BILATERAL means P×Q = 0 AND Q×P = 0.
+    Implemented here in 32D pathion space — sedenion components occupy indices
+    0–15; indices 16–31 are zero.
+
+    Canonical Six bilateral pairs (P, Q):
+        1. P=(e_1+e_14), Q=(e_3+e_12):  P×Q=0 AND Q×P=0
+        2. P=(e_3+e_12), Q=(e_5+e_10):  P×Q=0 AND Q×P=0
+        3. P=(e_4+e_11), Q=(e_6+e_9):   P×Q=0 AND Q×P=0
+        4. P=(e_1-e_14), Q=(e_3-e_12):  P×Q=0 AND Q×P=0
+        5. P=(e_1-e_14), Q=(e_5+e_10):  P×Q=0 AND Q×P=0
+        6. P=(e_2-e_13), Q=(e_6+e_9):   P×Q=0 AND Q×P=0
+
+    Formally verified in BilateralCollapse.lean (Lean 4, zero sorries):
+        #print axioms bilateral_collapse
+        → [propext, Classical.choice, Quot.sound]
 
     Args:
         pattern_id: Which canonical pattern to use (1-6)
 
     Returns:
-        Tuple of (P, Q) where P × Q = 0
+        Tuple of (P, Q) where P×Q = 0 AND Q×P = 0
     """
-    # Canonical Six patterns: ((a, b, sign_P), (c, d, sign_Q))
-    # sign: +1 for addition, -1 for subtraction
+    # Canonical Six bilateral pairs: ((P_idx_a, P_idx_b, P_sign), (Q_idx_c, Q_idx_d, Q_sign))
+    # P = e_a + sign*e_b,  Q = e_c + sign*e_d
     patterns = {
-        1: ((1, 14, +1), (3, 12, +1)),   # (e_1 + e_14) × (e_3 + e_12) = 0
-        2: ((3, 12, +1), (5, 10, +1)),   # (e_3 + e_12) × (e_5 + e_10) = 0
-        3: ((4, 11, +1), (6, 9, +1)),    # (e_4 + e_11) × (e_6 + e_9) = 0
-        4: ((1, 14, -1), (3, 12, -1)),   # (e_1 - e_14) × (e_3 - e_12) = 0
-        5: ((1, 14, -1), (5, 10, +1)),   # (e_1 - e_14) × (e_5 + e_10) = 0
-        6: ((2, 13, -1), (6, 9, +1)),    # (e_2 - e_13) × (e_6 + e_9) = 0
+        1: ((1, 14, +1), (3, 12, +1)),   # P=(e_1+e_14), Q=(e_3+e_12): P×Q=0 AND Q×P=0
+        2: ((3, 12, +1), (5, 10, +1)),   # P=(e_3+e_12), Q=(e_5+e_10): P×Q=0 AND Q×P=0
+        3: ((4, 11, +1), (6,  9, +1)),   # P=(e_4+e_11), Q=(e_6+e_9):  P×Q=0 AND Q×P=0
+        4: ((1, 14, -1), (3, 12, -1)),   # P=(e_1-e_14), Q=(e_3-e_12): P×Q=0 AND Q×P=0
+        5: ((1, 14, -1), (5, 10, +1)),   # P=(e_1-e_14), Q=(e_5+e_10): P×Q=0 AND Q×P=0
+        6: ((2, 13, -1), (6,  9, +1)),   # P=(e_2-e_13), Q=(e_6+e_9):  P×Q=0 AND Q×P=0
     }
 
     if pattern_id not in patterns:
@@ -499,6 +551,40 @@ def create_canonical_six_pattern(pattern_id: int) -> Tuple[Pathion, Pathion]:
     Q = Pathion(*coeffs_Q)
 
     return P, Q
+
+
+def stability_constant(P: Pathion, Q: Pathion, alpha: float) -> float:
+    """
+    Compute the proved stability constant for the Chavez Transform.
+
+    Formally verified in ChavezTransform_genuine.lean (Lean 4, April 2026):
+        stability_constant(P, Q, alpha) = 2*(||P||^2 + ||Q||^2) / (alpha * exp(1))
+
+    This is the tight bound from the exact K_Z formula on scalar inputs:
+        K_Z(P, Q, realToSed(x)) = 2*x^2*(||P||^2 + ||Q||^2)  [exact, not an estimate]
+    combined with the sharp inequality t*exp(-t) <= 1/e.
+
+    The stability theorem guarantees:
+        |C[f](P,Q,alpha,d)| <= stability_constant(P,Q,alpha) * L1_norm(f)
+    unconditionally — P*Q=0 is not required.
+
+    Axiom footprint: [propext, Classical.choice, Quot.sound]
+    GitHub: https://github.com/ChavezAILabs/CAIL-rh-investigation
+
+    Args:
+        P: First pathion of bilateral zero divisor pair
+        Q: Second pathion of bilateral zero divisor pair
+        alpha: Gaussian decay parameter (must be > 0)
+
+    Returns:
+        Proved stability constant M such that |C[f]| <= M * ||f||_1
+    """
+    import math
+    if alpha <= 0:
+        raise ValueError("alpha must be positive")
+    P_norm = abs(P)
+    Q_norm = abs(Q)
+    return 2.0 * (P_norm ** 2 + Q_norm ** 2) / (alpha * math.e)
 
 
 def test_functions():

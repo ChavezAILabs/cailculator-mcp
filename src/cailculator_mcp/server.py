@@ -195,6 +195,9 @@ class MCPServer:
         try:
             result = await get_tools().call_tool(tool_name, arguments)
             
+            # Extract image data if present
+            image_data = result.pop("image_data", None)
+            
             # Check response size to prevent 1MB limit errors
             result_json = json.dumps(result, indent=2)
             
@@ -217,11 +220,25 @@ class MCPServer:
                 }
                 result_json = json.dumps(truncated_result, indent=2)
             
+            # Prepare content list
+            content = []
+            
+            # Add image content if available
+            if image_data:
+                content.append({
+                    "type": "image",
+                    "data": image_data,
+                    "mimeType": "image/png"
+                })
+            
+            # Add text content
+            content.append({
+                "type": "text",
+                "text": result_json
+            })
+            
             return {
-                "content": [{
-                    "type": "text",
-                    "text": result_json
-                }]
+                "content": content
             }
             
         except Exception as e:

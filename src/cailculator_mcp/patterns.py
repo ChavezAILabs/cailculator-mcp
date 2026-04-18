@@ -31,6 +31,11 @@ class PatternDetector:
     - Conjugation symmetry (E8-related patterns)
     - Bilateral zeros (zero divisor structure)
     - Dimensional persistence (stability across dimensions)
+
+    Theorem Citation (ChavezTransform_genuine.lean, April 2026):
+        Result 3 — Pattern Invariance: K_Z(P, Q, realToSed(x)) = 2 * x^2 * (||P||^2 + ||Q||^2)
+        This proved theorem ensures that patterns identified on scalar inputs (1D) 
+        scale predictably to high-dimensional representations.
     """
     
     def __init__(self, alpha: float = 1.0):

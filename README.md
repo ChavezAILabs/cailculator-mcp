@@ -10,9 +10,17 @@
 
 *"Better math, less suffering"*
 
+### 🏆 Milestone: Formally Verified (v1.4.4 - April 2026)
+The core mathematical foundation of CAILculator is now **formally verified** in Lean 4. Unlike libraries that rely solely on numerical approximation, CAILculator's structural claims—including zero divisor patterns and transform stability—are backed by machine-verified proofs located in the `lean/` directory.
+
+- **[ChavezTransform_genuine.lean](./lean/ChavezTransform_genuine.lean)**: Proved results for transform convergence, tighter stability bounds ($M$), and pattern invariance.
+- **Aristotle Integration**: Harmonic Math's Aristotle engine was used to ensure "zero sorry" stubs in all core proofs.
+
 ## What This Is
 
-A Model Context Protocol server that lets AI agents compute with Cayley-Dickson algebras (sedenions 16D, pathions 32D, up to 256D) and associated Clifford algebras. Built on verified mathematical research into zero divisor patterns and structural properties discovered through systematic computational enumeration. Formally verified with Lean 4 proofs via Harmonic Math's Aristotle.
+A Model Context Protocol server that lets AI agents compute with Cayley-Dickson algebras (sedenions 16D, pathions 32D, up to 256D) and associated Clifford algebras. 
+
+Built on verified mathematical research into zero divisor patterns and structural properties discovered through systematic computational enumeration. CAILculator is at the forefront of the movement to integrate formal methods directly into analytical AI pipelines, providing a "trust score" grounded in algebraic certainty.
 
 ## Why "Pathological" Might Mean "Powerful"
 
