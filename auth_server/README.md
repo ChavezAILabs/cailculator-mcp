@@ -1,6 +1,8 @@
-# CAILculator Auth Server
+# CAILculator Auth Server (v1.4.4)
 
 FastAPI backend for API key management and usage tracking.
+
+**MILESTONE (April 2026):** This server now supports v1.4.4 clients using formally verified mathematical constants from `ChavezTransform_genuine.lean`.
 
 ## Deployment (Railway)
 
