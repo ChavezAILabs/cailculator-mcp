@@ -98,7 +98,7 @@ Open your configuration file and add the CAILculator server:
 
 Built on formal research published at DOI: [10.5281/zenodo.17402495](https://doi.org/10.5281/zenodo.17402495). All core structural claims are verified in Lean 4.
 
-Interested in custom profile development for **LHC**, **F1 Teams**, or **Biotech**? 
+Interested in custom profile development? 
 Contact **Chavez AI Labs** at [paul@chavezailabs.com](mailto:paul@chavezailabs.com) or [iknowpi@gmail.com](mailto:iknowpi@gmail.com).
 
 ---
