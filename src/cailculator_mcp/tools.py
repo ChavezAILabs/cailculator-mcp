@@ -1509,14 +1509,21 @@ async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
         logger.info(f"Creating {vis_type} visualization in {output_format} format")
 
-        # Create output directory — use env var or default to project assets
-        # On Windows, /mnt/user-data/outputs/ is often inaccessible or non-existent
-        base_output_dir = os.environ.get(
-            "CAILCULATOR_OUTPUT_DIR",
-            str(Path.cwd() / "assets")
-        )
-        output_dir = str(Path(base_output_dir) / "visualizations")
-        os.makedirs(output_dir, exist_ok=True)
+        # Compute assets path relative to this file so the path is CWD-independent.
+        # When Claude Desktop spawns the MCP server, inherited CWD is C:\WINDOWS\System32;
+        # using Path.cwd() would attempt to write there and raise WinError 5.
+        _default_assets = Path(__file__).resolve().parent.parent.parent / "assets"
+        base_output_dir = Path(
+            os.environ.get("CAILCULATOR_ASSETS_DIR", str(_default_assets))
+        ).resolve()
+        output_dir = base_output_dir / "visualizations"
+        try:
+            output_dir.mkdir(parents=True, exist_ok=True)
+        except PermissionError:
+            output_dir = Path.home() / ".cailculator" / "visualizations"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            logger.warning(f"Could not write to {base_output_dir / 'visualizations'}; falling back to {output_dir}")
+        output_dir = str(output_dir)
 
         # Generate timestamp for unique filenames
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
