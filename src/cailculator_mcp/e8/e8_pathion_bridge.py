@@ -45,6 +45,9 @@ import numpy as np
 from typing import Dict, Tuple, List
 from dataclasses import dataclass
 
+# v2.0 Core Imports
+from ..core.canonical_six import get_canonical_six
+from ..core.extended_structures import map_to_weyl_orbit
 
 @dataclass
 class PathionLoci:
@@ -61,57 +64,37 @@ class E8PathionBridge:
     Creates proper loci for Chavez Transform that bridge E8 geometry and pathion structure.
     """
 
-    def __init__(self):
-        # Canonical Six bilateral zero divisor pairs (P, Q) in sedenion index notation.
-        # Each entry: (P_indices, P_sign, Q_indices, Q_sign)
-        # P = e_{a} + sign_P * e_{b},  Q = e_{c} + sign_Q * e_{d}
-        # BILATERAL: P×Q = 0 AND Q×P = 0 (both directions verified in BilateralCollapse.lean)
-        self.canonical_six_pairs = {
-            1: ((1, 14, +1), (3, 12, +1)),   # P=(e_1+e_14), Q=(e_3+e_12)
-            2: ((3, 12, +1), (5, 10, +1)),   # P=(e_3+e_12), Q=(e_5+e_10)
-            3: ((4, 11, +1), (6,  9, +1)),   # P=(e_4+e_11), Q=(e_6+e_9)
-            4: ((1, 14, -1), (3, 12, -1)),   # P=(e_1-e_14), Q=(e_3-e_12)
-            5: ((1, 14, -1), (5, 10, +1)),   # P=(e_1-e_14), Q=(e_5+e_10)
-            6: ((2, 13, -1), (6,  9, +1)),   # P=(e_2-e_13), Q=(e_6+e_9)
-        }
+    def __init__(self, dimension: int = 32):
+        self.dimension = dimension
+        self.six_pairs = get_canonical_six(dimension)
         # P primary index (first non-zero component) for orbit classification
         self.canonical_six_primary = {1: 1, 2: 3, 3: 4, 4: 1, 5: 1, 6: 2}
 
     def create_pathion_loci(self, pattern_id: int, e8_root: np.ndarray = None) -> PathionLoci:
         """
         Create zero divisor loci for a Canonical Six bilateral pattern.
-
-        Creates loci for both P and Q vectors of the bilateral pair.
-        Strategy:
-        - Row i defines the position of component i in 32D pathion space
-        - Use canonical basis (identity) as default
-        - Modulate positions of P and Q components using E8 structure if provided
-
-        Args:
-            pattern_id: Which Canonical Six bilateral pattern (1-6)
-            e8_root: Optional E8 root (8D) to inform positioning
-
-        Returns:
-            PathionLoci with positions in 32D (shape: 32x32)
         """
-        (a, b, sign_P), (c, d, sign_Q) = self.canonical_six_pairs[pattern_id]
+        if pattern_id not in self.six_pairs:
+            raise ValueError(f"Invalid pattern_id: {pattern_id}")
+            
+        P_arr, Q_arr = self.six_pairs[pattern_id]
+        
+        # Start with canonical basis
+        loci = np.eye(self.dimension, dtype=float)
 
-        # Start with canonical basis (each component at its standard position)
-        loci = np.eye(32, dtype=float)
-
-        # Modulate positions of the non-zero components of both P and Q
+        # Modulate positions using E8 structure if provided
         if e8_root is not None and len(e8_root) == 8:
-            e8_component = np.zeros(32)
-            e8_component[:8] = e8_root * 0.3  # Modest mixing
+            e8_component = np.zeros(self.dimension)
+            e8_component[:8] = e8_root * 0.3
 
-            # Modulate P components (indices a, b)
-            loci[a] = loci[a] + e8_component
-            loci[b] = loci[b] + e8_component
-            # Modulate Q components (indices c, d)
-            loci[c] = loci[c] + e8_component
-            loci[d] = loci[d] + e8_component
+            # Identify indices for P and Q
+            p_indices = np.where(abs(P_arr) > 1e-10)[0]
+            q_indices = np.where(abs(Q_arr) > 1e-10)[0]
+            
+            for idx in np.concatenate([p_indices, q_indices]):
+                loci[idx] = loci[idx] + e8_component
 
-        # Orbit classification: patterns with P primary index < 4 in one class, >= 4 in other
+        # Orbit classification
         primary = self.canonical_six_primary[pattern_id]
         orbit_id = 1 if primary < 4 else 2
 

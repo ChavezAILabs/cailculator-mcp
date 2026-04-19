@@ -24,7 +24,7 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from cailculator_mcp.clifford_verified import CliffordElement
+from cailculator_mcp.core.clifford_element import CliffordElement
 
 
 class TestCliffordElementBasics:
@@ -322,7 +322,7 @@ class TestMCPServerIntegration:
 
     def test_clifford_verified_import(self):
         """Test that MCP server can import the verified implementation."""
-        from cailculator_mcp.clifford_verified import CliffordElement
+        from cailculator_mcp.core.clifford_element import CliffordElement
 
         # Create an element
         elem = CliffordElement(n=5)

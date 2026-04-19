@@ -44,14 +44,23 @@ async def batch_analyze_market(arguments: Dict[str, Any]) -> Dict[str, Any]:
         from .data_loaders import load_market_data
         from .patterns import PatternDetector
         from .transforms import ChavezTransform
-        from .terminology import translate_output, validate_terminology_level
+        from .profiles.manager import ProfileManager
+
+        # 0. Initialize Profile Manager
+        pm = ProfileManager()
+        profile_name = arguments.get("profile", "quant_equity")
+        if not pm.load_profile(profile_name):
+            profile_name = "quant_equity"
+            pm.load_profile(profile_name)
+        
+        translate = pm.get_translator()
 
         # Parse arguments
         file_path = arguments.get("file_path")
         analysis_type = arguments.get("analysis_type", "pattern_discovery")
         sample_size = arguments.get("sample_size", 5000)
         confidence_threshold = arguments.get("confidence_threshold", 0.70)
-        terminology_level = validate_terminology_level(arguments.get("terminology_level", "standard"))
+        terminology_level = arguments.get("terminology_level", "standard")
         max_deep_dive_periods = arguments.get("max_deep_dive_periods", 10)
 
         if not file_path:

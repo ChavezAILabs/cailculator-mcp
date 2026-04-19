@@ -1,0 +1,9 @@
+{
+  "name": "quant_equity",
+  "version": "2.0.0",
+  "scope": "Financial Market Regime Detection",
+  "used_theorems": ["ChavezTransform_genuine"],
+  "empirical_dependencies": [
+    {"claim": "Zero divisors predict volatility clustering", "reference": "v1.x heuristics"}
+  ]
+}

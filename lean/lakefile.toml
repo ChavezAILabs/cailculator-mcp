@@ -1,0 +1,59 @@
+name = "RequestProject"
+defaultTargets = ["AsymptoticRigidity", "MirrorSymmetry", "MirrorSymmetryHelper", "NoetherDuality", "RHForcingArgument", "UnityConstraint", "UniversalPerimeter", "SymmetryBridge", "PrimeEmbedding", "ZetaIdentification", "RiemannHypothesisProof", "EulerAudit", "EulerProductBridge"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.28.0"
+
+[[lean_lib]]
+name = "AsymptoticRigidity"
+globs = ["AsymptoticRigidity"]
+
+[[lean_lib]]
+name = "MirrorSymmetry"
+globs = ["MirrorSymmetry"]
+
+[[lean_lib]]
+name = "MirrorSymmetryHelper"
+globs = ["MirrorSymmetryHelper"]
+
+[[lean_lib]]
+name = "NoetherDuality"
+globs = ["NoetherDuality"]
+
+[[lean_lib]]
+name = "RHForcingArgument"
+globs = ["RHForcingArgument"]
+
+[[lean_lib]]
+name = "UnityConstraint"
+globs = ["UnityConstraint"]
+
+[[lean_lib]]
+name = "UniversalPerimeter"
+globs = ["UniversalPerimeter"]
+
+[[lean_lib]]
+name = "SymmetryBridge"
+globs = ["SymmetryBridge"]
+
+[[lean_lib]]
+name = "PrimeEmbedding"
+globs = ["PrimeEmbedding"]
+
+[[lean_lib]]
+name = "ZetaIdentification"
+globs = ["ZetaIdentification"]
+
+[[lean_lib]]
+name = "RiemannHypothesisProof"
+globs = ["RiemannHypothesisProof"]
+
+[[lean_lib]]
+name = "EulerAudit"
+globs = ["EulerAudit"]
+
+[[lean_lib]]
+name = "EulerProductBridge"
+globs = ["EulerProductBridge"]

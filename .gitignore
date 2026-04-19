@@ -48,6 +48,15 @@ build/
 # MacOS
 .DS_Store
 
+# Large data files
+*.json
+!src/**/*.json
+!auth_server/**/*.json
+!package.json
+!composer.json
+!tsconfig.json
+!*.mcp.json
+
 # Logs
 *.log
 

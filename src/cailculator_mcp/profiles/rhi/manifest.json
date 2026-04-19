@@ -1,0 +1,10 @@
+{
+  "name": "rhi",
+  "version": "2.0.0",
+  "scope": "Riemann Hypothesis Investigation & Spectral Profiling",
+  "used_theorems": ["BilateralCollapse", "ChavezTransform_genuine", "MirrorSymmetry"],
+  "empirical_dependencies": [
+    {"claim": "S3B=S4 Equivalence", "reference": "AIEX-229"},
+    {"claim": "Log-periodic convergence", "reference": "AIEX-231"}
+  ]
+}

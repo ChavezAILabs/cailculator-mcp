@@ -16,26 +16,25 @@ logger = logging.getLogger(__name__)
 __all__ = ['Sedenion', 'Pathion', 'Chingon', 'CD128', 'CD256', 'create_hypercomplex', 'find_zero_divisors']
 
 
-def create_hypercomplex(dimension: int, coefficients: List[float]):
-    """
-    Factory function to create hypercomplex number of specified dimension.
+from .core.clifford_element import CliffordElement
 
+def create_hypercomplex(dimension: int, coefficients: List[float], framework: str = "cayley-dickson"):
+    """
+    Factory function to create hypercomplex elements in dual frameworks.
+    
     Args:
-        dimension: Must be 16, 32, 64, 128, or 256
+        dimension: The algebra dimension (16, 32, 64, 128, 256)
         coefficients: List of real coefficients
-
-    Returns:
-        Appropriate hypercomplex number instance from real library
-
-    Supported Dimensions:
-        - 16D: Sedenions (S)
-        - 32D: Pathions (P)
-        - 64D: Chingons (X)
-        - 128D: CD128 (next Cayley-Dickson level)
-        - 256D: CD256 (next Cayley-Dickson level)
-
-    Note: 512D and beyond require custom implementation (not in hypercomplex library)
+        framework: 'cayley-dickson' or 'clifford'
     """
+    if framework == "clifford":
+        import math
+        n = int(math.log2(dimension))
+        if 2**n != dimension:
+            raise ValueError(f"Clifford multivector dimension {dimension} must be power of 2")
+        return CliffordElement(n=n, coeffs=np.array(coefficients))
+
+    # Default Cayley-Dickson Logic
     if dimension == 16:
         return Sedenion(*coefficients)
     elif dimension == 32:
@@ -47,7 +46,7 @@ def create_hypercomplex(dimension: int, coefficients: List[float]):
     elif dimension == 256:
         return CD256(*coefficients)
     else:
-        raise ValueError(f"Unsupported dimension {dimension}. Supported: 16, 32, 64, 128, 256 (512+ not yet available).")
+        raise ValueError(f"Unsupported dimension {dimension}.")
 
 
 def find_zero_divisors(dimension: int, num_samples: int = 1000) -> List[Tuple]:

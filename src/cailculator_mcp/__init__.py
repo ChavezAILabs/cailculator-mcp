@@ -1,46 +1,20 @@
 """
-CAILculator MCP Server
-High-dimensional data analysis for MCP clients
+CAILculator MCP - Production Engine v2.0.0
+Universal high-precision mathematical data analysis
 """
 
-__version__ = "1.4.5"
-__author__ = "Paul Chavez"
-__email__ = "paul@chavezailabs.com"
+__version__ = "2.0.0"
 
-# Lazy imports to speed up module loading
-# These will only be imported when accessed
-def __getattr__(name):
-    if name == 'MCPServer' or name == 'main':
-        from .server import MCPServer, main
-        globals()['MCPServer'] = MCPServer
-        globals()['main'] = main
-        return globals()[name]
-    elif name == 'TOOLS_DEFINITIONS' or name == 'call_tool':
-        from .tools import TOOLS_DEFINITIONS, call_tool
-        globals()['TOOLS_DEFINITIONS'] = TOOLS_DEFINITIONS
-        globals()['call_tool'] = call_tool
-        return globals()[name]
-    elif name == 'PatternDetector' or name == 'Pattern':
-        from .patterns import PatternDetector, Pattern
-        globals()['PatternDetector'] = PatternDetector
-        globals()['Pattern'] = Pattern
-        return globals()[name]
-    elif name == 'create_hypercomplex' or name == 'Pathion' or name == 'Sedenion':
-        from .hypercomplex import create_hypercomplex, Pathion, Sedenion
-        globals()['create_hypercomplex'] = create_hypercomplex
-        globals()['Pathion'] = Pathion
-        globals()['Sedenion'] = Sedenion
-        return globals()[name]
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+from .server import MCPServer, main
+from .tools import call_tool, TOOLS_DEFINITIONS
+from .core.chavez_transform import ChavezTransform
+from .patterns import PatternDetector
 
 __all__ = [
     'MCPServer',
     'main',
-    'TOOLS_DEFINITIONS',
     'call_tool',
-    'PatternDetector',
-    'Pattern',
-    'create_hypercomplex',
-    'Pathion',
-    'Sedenion',
+    'TOOLS_DEFINITIONS',
+    'ChavezTransform',
+    'PatternDetector'
 ]

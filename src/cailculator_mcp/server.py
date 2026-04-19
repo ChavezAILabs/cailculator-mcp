@@ -125,7 +125,7 @@ class MCPServer:
             "protocolVersion": "2024-11-05",
             "serverInfo": {
                 "name": "cailculator-mcp",
-                "version": "1.4.3"
+                "version": "2.0.0"
             },
             "capabilities": {
                 "tools": {}
@@ -387,7 +387,7 @@ async def run_http_server(host: str = "0.0.0.0", port: int = 8080):
             "protocolVersion": "2024-11-05",
             "serverInfo": {
                 "name": "cailculator-mcp",
-                "version": "1.3.0"
+                "version": "2.0.0"
             },
             "capabilities": {
                 "tools": {}
