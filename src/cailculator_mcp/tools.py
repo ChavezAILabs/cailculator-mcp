@@ -1509,10 +1509,16 @@ async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
         logger.info(f"Creating {vis_type} visualization in {output_format} format")
 
-        # Compute assets path relative to this file so the path is CWD-independent.
-        # When Claude Desktop spawns the MCP server, inherited CWD is C:\WINDOWS\System32;
-        # using Path.cwd() would attempt to write there and raise WinError 5.
-        _default_assets = Path(__file__).resolve().parent.parent.parent / "assets"
+        # Compute assets path independent of CWD (Claude Desktop inherits C:\WINDOWS\System32).
+        # In dev (editable install): __file__ is src/cailculator_mcp/tools.py, so
+        # parent.parent.parent is the repo root and .git exists there — use repo/assets.
+        # When installed via pip: .git won't be found, so fall back to user home.
+        _pkg_root = Path(__file__).resolve().parent.parent.parent
+        _default_assets = (
+            _pkg_root / "assets"
+            if (_pkg_root / ".git").exists()
+            else Path.home() / ".cailculator" / "assets"
+        )
         base_output_dir = Path(
             os.environ.get("CAILCULATOR_ASSETS_DIR", str(_default_assets))
         ).resolve()
