@@ -84,15 +84,16 @@ TOOLS_DEFINITIONS = [
     },
     {
         "name": "zdtp_transmit",
-        "description": "Zero Divisor Transmission Protocol v2.0 - High-precision structural transmission.",
+        "description": "Zero Divisor Transmission Protocol v2.0 - High-precision structural transmission up to 256D (Algebraic Ceiling).",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "input_16d": {"type": "array", "items": {"type": "number"}, "minItems": 16, "maxItems": 16},
-                "gateway": {"type": "string", "description": "S1-S5 or 'all'"},
+                "gateway": {"type": ["string", "integer"], "description": "S1-S6, 1-6, or 'all'"},
+                "restrict_to_pattern": {"type": "integer", "description": "Explicit pattern ID (1-6) to use as gateway"},
                 "profile": {"type": "string", "default": "general_data"}
             },
-            "required": ["input_16d", "gateway"]
+            "required": ["input_16d"]
         }
     },
     {
@@ -208,17 +209,30 @@ async def zdtp_transmit(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
         input_16d = list(arguments.get("input_16d", []))
         gateway = arguments.get("gateway")
+        restrict_to_pattern = arguments.get("restrict_to_pattern")
         profile = arguments.get("profile", "general_data")
         
         zdtp = get_zdtp_v2()
         
         if gateway == "all":
             return zdtp.full_cascade(input_16d, profile_name=profile)
-        else:
-            # S1-S5 mapping
-            pid_map = {"S1": 1, "S2": 2, "S3A": 3, "S3B": 4, "S4": 5, "S5": 6}
-            pid = pid_map.get(gateway, 1)
-            return zdtp.transmit(input_16d, pid, profile_name=profile)
+        
+        # Determine Pattern ID
+        pid = 1 # Default
+        
+        if restrict_to_pattern is not None:
+            pid = int(restrict_to_pattern)
+        elif isinstance(gateway, int):
+            pid = gateway
+        elif isinstance(gateway, str):
+            # S1-S6 mapping
+            pid_map = {
+                "S1": 1, "S2": 2, "S3": 3, "S4": 4, "S5": 5, "S6": 6,
+                "S3A": 3, "S3B": 4 # Backward compatibility
+            }
+            pid = pid_map.get(gateway.upper(), 1)
+            
+        return zdtp.transmit(input_16d, pid, profile_name=profile)
     except Exception as e:
         return {"success": False, "error": str(e)}
 

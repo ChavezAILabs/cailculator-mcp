@@ -13,8 +13,8 @@ import os
 # Ensure we can import from the staging package
 sys.path.append(os.path.join(os.getcwd(), 'src'))
 
-from cailculator_v2.core.stability import get_stability_constant, verify_bound
-from cailculator_v2.core.canonical_six import get_canonical_six
+from cailculator_mcp.core.stability import get_stability_constant, verify_bound
+from cailculator_mcp.core.canonical_six import get_canonical_six
 
 # Test 1 — Exact formula verification
 def test_stability_constant_exact_formula():

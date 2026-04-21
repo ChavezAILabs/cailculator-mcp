@@ -9,7 +9,7 @@ Tests the P × Q = 0 AND Q × P = 0 identity at 10^-15 precision.
 import numpy as np
 from ..hypercomplex import create_hypercomplex
 
-def verify_bilateral_collapse(P_arr: np.ndarray, Q_arr: np.ndarray, precision: float = 1e-15, framework: str = "cayley-dickson") -> dict:
+def verify_bilateral_collapse(P_arr: np.ndarray, Q_arr: np.ndarray, precision: float = 1e-15, framework: str = "cayley-dickson", clifford_strategy: str = "direct") -> dict:
     """
     Oracular check for the bilateral zero divisor property.
     
@@ -21,6 +21,7 @@ def verify_bilateral_collapse(P_arr: np.ndarray, Q_arr: np.ndarray, precision: f
         Q_arr: Second hypercomplex element as array
         precision: Required zero-approximation (default 10^-15)
         framework: 'cayley-dickson' or 'clifford'
+        clifford_strategy: Mapping strategy for 16D 'clifford' framework ('direct' or 'bivector_pure')
         
     Returns:
         Result dictionary with status and norms
@@ -29,8 +30,13 @@ def verify_bilateral_collapse(P_arr: np.ndarray, Q_arr: np.ndarray, precision: f
     if len(Q_arr) != dim:
         raise ValueError(f"Dimension mismatch: P is {dim}D, Q is {len(Q_arr)}D")
         
-    P = create_hypercomplex(dim, P_arr.tolist(), framework=framework)
-    Q = create_hypercomplex(dim, Q_arr.tolist(), framework=framework)
+    if framework == "clifford" and dim == 16:
+        from .clifford_element import map_sedenion_to_clifford
+        P = map_sedenion_to_clifford(P_arr, strategy=clifford_strategy)
+        Q = map_sedenion_to_clifford(Q_arr, strategy=clifford_strategy)
+    else:
+        P = create_hypercomplex(dim, P_arr.tolist(), framework=framework)
+        Q = create_hypercomplex(dim, Q_arr.tolist(), framework=framework)
     
     # Check products in both directions (Bilateral property)
     PQ = P * Q

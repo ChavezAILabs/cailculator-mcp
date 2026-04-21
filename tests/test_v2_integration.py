@@ -12,9 +12,9 @@ import os
 # Ensure we can import from the staging package
 sys.path.append(os.path.join(os.getcwd(), 'src'))
 
-from cailculator_v2.core.chavez_transform import ChavezTransform
-from cailculator_v2.core.canonical_six import get_canonical_six
-from cailculator_v2.core.stability import get_stability_constant
+from cailculator_mcp.core.chavez_transform import ChavezTransform
+from cailculator_mcp.core.canonical_six import get_canonical_six
+from cailculator_mcp.core.stability import get_stability_constant
 
 # Test 5 — AIEX-506 regression guard (critical)
 def test_stability_bound_holds_across_alpha_regime():

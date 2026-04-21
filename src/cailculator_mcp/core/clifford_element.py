@@ -99,3 +99,37 @@ def create_clifford_basis(n: int, indices: Tuple[int, ...]) -> CliffordElement:
     coeffs = np.zeros(2**n)
     coeffs[bitmask] = 1.0
     return CliffordElement(n=n, coeffs=coeffs)
+
+def map_sedenion_to_clifford(sedenion_coeffs: np.ndarray, strategy: str = "direct") -> CliffordElement:
+    """
+    Maps a 16D Cayley-Dickson Sedenion to a Cl(4,0,0) Clifford multivector.
+    
+    Strategies:
+    - 'direct': 1-to-1 index mapping (bitmask isomorphism).
+    - 'bivector_pure': Maps Pattern 2 specific indices to pure bivectors to test the Anchor Hypothesis.
+    """
+    if len(sedenion_coeffs) != 16:
+        raise ValueError("Sedenion to Clifford mapping requires exactly 16 coefficients.")
+        
+    clifford_coeffs = np.zeros(16, dtype=np.float64)
+    
+    if strategy == "direct":
+        clifford_coeffs = np.array(sedenion_coeffs)
+    elif strategy == "bivector_pure":
+        # Anchor Hypothesis mapping: force specific indices into Cl(4) bivectors
+        # The 6 bivectors in Cl(4) have indices: 3 (e12), 5 (e13), 6 (e23), 9 (e14), 10 (e24), 12 (e34)
+        bivector_map = {
+            1: 3,   # e1 -> e12
+            10: 10, # e10 -> e24 (already a bivector in direct map)
+            5: 5,   # e5 -> e13 (already a bivector)
+            14: 12, # e14 -> e34
+            # Keep others direct if needed
+        }
+        for i, val in enumerate(sedenion_coeffs):
+            if val != 0:
+                mapped_idx = bivector_map.get(i, i)
+                clifford_coeffs[mapped_idx] += val
+    else:
+        raise ValueError(f"Unknown mapping strategy: {strategy}")
+        
+    return CliffordElement(n=4, coeffs=clifford_coeffs)
