@@ -106,6 +106,11 @@ TOOLS_DEFINITIONS = [
             },
             "required": ["visualization_type"]
         }
+    },
+    {
+        "name": "get_version",
+        "description": "Returns the current version of the CAILculator MCP server.",
+        "inputSchema": {"type": "object", "properties": {}}
     }
 ]
 
@@ -129,6 +134,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         return await zdtp_transmit(arguments)
     elif name == "illustrate":
         return await illustrate(arguments)
+    elif name == "get_version":
+        return await get_version(arguments)
     elif name == "regime_detection":
         from .regime_detection import regime_detection
         return await regime_detection(arguments)
@@ -161,7 +168,6 @@ async def chavez_transform(arguments: Dict[str, Any]) -> Dict[str, Any]:
             "success": True,
             "transform_value": float(result["value"]),
             "stability_bound": result["stability_bound"],
-            "pattern_metadata": get_pattern_metadata(1),
             "precision": "10^-15"
         }
     except Exception as e:
@@ -265,3 +271,14 @@ async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": f"Visualization {vis_type} not yet ported to v2.0"}
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+async def get_version(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    """Returns the version information for the CAILculator MCP."""
+    from . import __version__
+    return {
+        "success": True,
+        "version": __version__,
+        "engine": "v2.0 High-Precision",
+        "precision": "10^-15",
+        "status": "Production Stable"
+    }

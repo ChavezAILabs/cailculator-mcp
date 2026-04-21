@@ -1,6 +1,6 @@
 [project]
 name = "cailculator-mcp"
-version = "2.0.2"
+version = "2.0.3"
 description = "CAILculator MCP Server - High-dimensional data analysis with dual algebra frameworks"
 authors = [{name = "Paul Chavez", email = "paul@chavezailabs.com"}]
 readme = "README.md"
