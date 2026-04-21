@@ -100,3 +100,6 @@ scripts/setup_*.py
 !auth_server/static/**/*.png
 !auth_server/static/**/*.jpg
 !auth_server/static/**/*.svg
+
+# Local investigative notes (PII) 
+docs/devnotes/
