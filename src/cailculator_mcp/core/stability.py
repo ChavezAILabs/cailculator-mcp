@@ -31,8 +31,11 @@ def get_stability_constant(P: np.ndarray, Q: np.ndarray, alpha: float) -> float:
     p_norm_sq = np.sum(P**2)
     q_norm_sq = np.sum(Q**2)
     
-    # M = 2*(||P||^2 + ||Q||^2) / (alpha * e)
+    # M = 2.0 * (||P||^2 + ||Q||^2) / (alpha * e)
+    # Note: Theoretical check required for dimension_param (d) scaling in v2.1.
+    # Current Lean proof covers the case where the weighting function Omega_d(x) <= 1.
     M = 2.0 * (p_norm_sq + q_norm_sq) / (alpha * math.e)
+
     
     return float(M)
 

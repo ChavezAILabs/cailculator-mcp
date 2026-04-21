@@ -29,12 +29,11 @@ logger = logging.getLogger(__name__)
 TOOLS_DEFINITIONS = [
     {
         "name": "chavez_transform",
-        "description": "Apply the High-Precision Chavez Transform (v2.0) to numerical data.",
+        "description": "Apply the High-Precision Chavez Transform (v2.0) to numerical data. A general integral transform for convergence and stability analysis.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "data": {"type": "array", "items": {"type": "number"}},
-                "pattern_id": {"type": "integer", "minimum": 1, "maximum": 6, "default": 1},
                 "alpha": {"type": "number", "default": 1.0},
                 "dimension_param": {"type": "integer", "default": 2}
             },
@@ -90,7 +89,7 @@ TOOLS_DEFINITIONS = [
             "properties": {
                 "input_16d": {"type": "array", "items": {"type": "number"}, "minItems": 16, "maxItems": 16},
                 "gateway": {"type": ["string", "integer"], "description": "S1-S6, 1-6, or 'all'"},
-                "restrict_to_pattern": {"type": "integer", "description": "Explicit pattern ID (1-6) to use as gateway"},
+                "restrict_to_pattern": {"type": "integer", "minimum": 1, "maximum": 6, "description": "Explicit pattern ID (1-6) to use as gateway. Overrides 'gateway' if provided."},
                 "profile": {"type": "string", "default": "general_data"}
             },
             "required": ["input_16d"]
@@ -142,13 +141,13 @@ async def chavez_transform(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
         data = arguments.get("data")
         alpha = float(arguments.get("alpha", 1.0))
-        pattern_id = int(arguments.get("pattern_id", 1))
         d = int(arguments.get("dimension_param", 2))
         
         if not data: return {"success": False, "error": "No data"}
             
         ct = ChavezTransform(dimension=32, alpha=alpha)
-        P_arr, Q_arr = get_canonical_six(32)[pattern_id]
+        # Use Pattern 1 as the default anchor for the general transform
+        P_arr, Q_arr = get_canonical_six(32)[1]
         
         data_arr = np.array(data)
         def f(x):
@@ -162,7 +161,7 @@ async def chavez_transform(arguments: Dict[str, Any]) -> Dict[str, Any]:
             "success": True,
             "transform_value": float(result["value"]),
             "stability_bound": result["stability_bound"],
-            "pattern_metadata": get_pattern_metadata(pattern_id),
+            "pattern_metadata": get_pattern_metadata(1),
             "precision": "10^-15"
         }
     except Exception as e:
@@ -215,7 +214,9 @@ async def zdtp_transmit(arguments: Dict[str, Any]) -> Dict[str, Any]:
         zdtp = get_zdtp_v2()
         
         if gateway == "all":
-            return zdtp.full_cascade(input_16d, profile_name=profile)
+            result = zdtp.full_cascade(input_16d, profile_name=profile)
+            result["success"] = True
+            return result
         
         # Determine Pattern ID
         pid = 1 # Default
@@ -232,7 +233,9 @@ async def zdtp_transmit(arguments: Dict[str, Any]) -> Dict[str, Any]:
             }
             pid = pid_map.get(gateway.upper(), 1)
             
-        return zdtp.transmit(input_16d, pid, profile_name=profile)
+        result = zdtp.transmit(input_16d, pid, profile_name=profile)
+        result["success"] = True
+        return result
     except Exception as e:
         return {"success": False, "error": str(e)}
 

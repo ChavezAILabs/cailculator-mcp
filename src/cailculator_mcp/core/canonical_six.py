@@ -65,6 +65,8 @@ def get_pattern_metadata(pattern_id: int) -> Dict:
         "formula": f"(e_{pa} {ps_str} e_{pb}) × (e_{qc} {qs_str} e_{qd}) = 0",
         "P_expression": f"e_{pa} {ps_str} e_{pb}",
         "Q_expression": f"e_{qc} {qs_str} e_{qd}",
+        "P_vector_indices": [pa, pb],
+        "Q_vector_indices": [qc, qd],
         "is_bilateral": True,
         "verification_source": "BilateralCollapse.lean"
     }
