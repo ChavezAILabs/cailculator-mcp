@@ -560,7 +560,7 @@ Need help? Reply to this email or reach out at iknowpi@gmail.com
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(request: Request):
     """Landing page with pricing"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 @app.get("/api")
 async def api_info():
@@ -708,7 +708,7 @@ async def signup(signup_request: SignupRequest, request: Request, db: Session = 
 #     """
 #     Free tier signup page (simple email form) - DEPRECATED
 #     """
-#     return templates.TemplateResponse("signup_free.html", {"request": request})
+#     return templates.TemplateResponse(request=request, name="signup_free.html")
 
 @app.get("/verify-email", response_class=HTMLResponse)
 async def verify_email(request: Request, token: str, db: Session = Depends(get_db)):
@@ -719,16 +719,14 @@ async def verify_email(request: Request, token: str, db: Session = Depends(get_d
     user = db.query(User).filter(User.verification_token == token).first()
 
     if not user:
-        return templates.TemplateResponse("verification_result.html", {
-            "request": request,
+        return templates.TemplateResponse(request=request, name="verification_result.html", context={
             "success": False,
             "message": "Invalid verification link. The token may have expired or already been used."
         })
 
     # Check if token expired
     if user.verification_token_expires and user.verification_token_expires < datetime.utcnow():
-        return templates.TemplateResponse("verification_result.html", {
-            "request": request,
+        return templates.TemplateResponse(request=request, name="verification_result.html", context={
             "success": False,
             "message": "Verification link has expired. Please sign up again."
         })
@@ -738,8 +736,7 @@ async def verify_email(request: Request, token: str, db: Session = Depends(get_d
         # Find existing API key
         existing_key = db.query(APIKey).filter(APIKey.user_id == user.id).first()
         if existing_key:
-            return templates.TemplateResponse("verification_result.html", {
-                "request": request,
+            return templates.TemplateResponse(request=request, name="verification_result.html", context={
                 "success": True,
                 "message": "Email already verified. Your API key was sent previously.",
                 "already_verified": True
@@ -754,8 +751,7 @@ async def verify_email(request: Request, token: str, db: Session = Depends(get_d
         # Send manual approval notification email
         send_manual_approval_pending_email(user.email, user.country_code)
 
-        return templates.TemplateResponse("verification_result.html", {
-            "request": request,
+        return templates.TemplateResponse(request=request, name="verification_result.html", context={
             "success": True,
             "message": f"Email verified! Your signup from {user.country_code or 'your region'} requires manual approval. You will receive your API key within 24 hours.",
             "requires_approval": True
@@ -777,8 +773,7 @@ async def verify_email(request: Request, token: str, db: Session = Depends(get_d
     db.add(api_key_record)
     db.commit()
 
-    return templates.TemplateResponse("verification_result.html", {
-        "request": request,
+    return templates.TemplateResponse(request=request, name="verification_result.html", context={
         "success": True,
         "api_key": api_key_plain,
         "email": user.email,
@@ -1029,13 +1024,11 @@ async def success(request: Request, session_id: str):
     try:
         session = stripe.checkout.Session.retrieve(session_id)
 
-        return templates.TemplateResponse("success.html", {
-            "request": request,
+        return templates.TemplateResponse(request=request, name="success.html", context={
             "session": session
         })
     except Exception as e:
-        return templates.TemplateResponse("success.html", {
-            "request": request,
+        return templates.TemplateResponse(request=request, name="success.html", context={
             "error": str(e)
         })
 
