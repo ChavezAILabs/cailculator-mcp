@@ -1,472 +1,1881 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAILculator MCP - High-Dimensional Data Analysis</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAILculator — Applied Pathological Mathematics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #080a0c;
+      --deep: #0d1117;
+      --panel: #111820;
+      --border: #1e2d3d;
+      --border-bright: #2a4060;
+      --text: #c8d8e8;
+      --text-dim: #5a7a96;
+      --text-dimmer: #2a4060;
+      --accent: #00d4ff;
+      --accent-dim: #0a4a5a;
+      --gold: #c8a84b;
+      --gold-dim: #3a2e0a;
+      --green: #00e676;
+      --green-dim: #0a2a14;
+      --red: #ff4444;
+      --white: #e8f4ff;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+    html { scroll-behavior: smooth; }
 
-        header {
-            text-align: center;
-            color: white;
-            padding: 60px 20px 40px;
-        }
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
 
-        header .logo {
-            max-width: 400px;
-            height: auto;
-            margin-bottom: 20px;
-        }
+    /* GRID OVERLAY */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-        header h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
+    /* SCANLINE */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,212,255,0.015) 2px,
+        rgba(0,212,255,0.015) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
 
-        header .tagline {
-            font-size: 1.3em;
-            opacity: 0.95;
-            font-style: italic;
-        }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 32px;
+      position: relative;
+      z-index: 1;
+    }
 
-        header .subtitle {
-            font-size: 1.1em;
-            margin-top: 20px;
-            opacity: 0.9;
-        }
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8,10,12,0.92);
+      backdrop-filter: blur(12px);
+    }
 
-        .features {
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
-            margin: 40px 0;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-        .features h2 {
-            text-align: center;
-            color: #667eea;
-            margin-bottom: 30px;
-            font-size: 2em;
-        }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
 
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-            margin-top: 30px;
-        }
+    .nav-logo-mark {
+      width: 32px;
+      height: 32px;
+      border: 1.5px solid var(--accent);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      padding: 5px;
+    }
 
-        .feature {
-            text-align: center;
-        }
+    .nav-logo-mark span {
+      background: var(--accent);
+      display: block;
+    }
 
-        .feature h3 {
-            color: #764ba2;
-            margin-bottom: 10px;
-        }
+    .nav-logo-mark span:nth-child(2),
+    .nav-logo-mark span:nth-child(3) {
+      background: var(--accent-dim);
+    }
 
-        .pricing {
-            margin: 40px 0;
-        }
+    .nav-logo-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--white);
+      letter-spacing: 0.05em;
+    }
 
-        .pricing h2 {
-            text-align: center;
-            color: white;
-            margin-bottom: 40px;
-            font-size: 2.5em;
-        }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
 
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-        }
+    .nav-links a {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
 
-        .pricing-card {
-            background: white;
-            border-radius: 12px;
-            padding: 40px 30px;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-            position: relative;
-        }
+    .nav-links a:hover { color: var(--accent); }
 
-        .pricing-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
-        }
+    .nav-cta {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 8px 20px;
+      border: 1px solid var(--accent);
+      color: var(--accent) !important;
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: background 0.2s, color 0.2s !important;
+    }
 
-        .pricing-card.featured {
-            border: 3px solid #667eea;
-        }
+    .nav-cta:hover {
+      background: var(--accent) !important;
+      color: var(--black) !important;
+    }
 
-        .pricing-card h3 {
-            color: #764ba2;
-            font-size: 1.8em;
-            margin-bottom: 15px;
-        }
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px 0 80px;
+      position: relative;
+    }
 
-        .price {
-            font-size: 3em;
-            font-weight: bold;
-            color: #667eea;
-            margin: 20px 0;
-        }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
 
-        .price-period {
-            font-size: 0.4em;
-            color: #666;
-            font-weight: normal;
-        }
+    /* Animated sedenion-like figure in the background */
+    .hero-bg svg {
+      position: absolute;
+      right: -100px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.06;
+      width: 700px;
+      height: 700px;
+      animation: rotate-slow 80s linear infinite;
+    }
 
-        .requests {
-            color: #666;
-            font-size: 1.1em;
-            margin-bottom: 30px;
-        }
+    @keyframes rotate-slow {
+      from { transform: translateY(-50%) rotate(0deg); }
+      to { transform: translateY(-50%) rotate(360deg); }
+    }
 
-        .features-list {
-            text-align: left;
-            margin: 30px 0;
-            color: #555;
-        }
+    .hero-glow {
+      position: absolute;
+      right: 200px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(ellipse, rgba(0,212,255,0.04) 0%, transparent 70%);
+      pointer-events: none;
+    }
 
-        .features-list li {
-            margin: 10px 0;
-            padding-left: 25px;
-            position: relative;
-        }
+    .hero-content {
+      max-width: 720px;
+      animation: fade-up 0.8s ease both;
+    }
 
-        .features-list li::before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #667eea;
-            font-weight: bold;
-        }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-        .subscribe-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.1em;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-decoration: none;
-            display: inline-block;
-        }
+    .hero-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-        .subscribe-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
+    .hero-tag::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--accent);
+    }
 
-        .subscribe-btn:active {
-            transform: scale(0.98);
-        }
+    .hero-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(48px, 6vw, 80px);
+      font-weight: 400;
+      line-height: 1.05;
+      color: var(--white);
+      margin-bottom: 12px;
+    }
 
-        footer {
-            text-align: center;
-            color: white;
-            padding: 40px 20px;
-            opacity: 0.9;
-        }
+    .hero-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
 
-        footer .footer-logo {
-            max-width: 200px;
-            height: auto;
-            margin-bottom: 15px;
-            opacity: 0.8;
-        }
+    .hero-subtitle {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      margin-bottom: 32px;
+    }
 
-        footer a {
-            color: white;
-            text-decoration: underline;
-        }
+    .hero-desc {
+      font-size: 18px;
+      color: var(--text);
+      line-height: 1.7;
+      margin-bottom: 48px;
+      max-width: 580px;
+      font-weight: 400;
+    }
 
-        .student-section {
-            background: white;
-            border-radius: 12px;
-            padding: 30px 40px;
-            margin-top: 40px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            text-align: center;
-        }
+    .hero-desc strong {
+      color: var(--white);
+      font-weight: 600;
+    }
 
-        .student-section h3 {
-            color: #667eea;
-            font-size: 1.8em;
-            margin-bottom: 20px;
-        }
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
 
-        .student-section p {
-            color: #555;
-            font-size: 1.1em;
-            margin: 15px 0;
-        }
+    .btn-primary {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      background: var(--accent);
+      color: var(--black);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.2s, transform 0.15s;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+    }
 
-        .student-section code {
-            background: #f0f0f0;
-            padding: 5px 15px;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            color: #764ba2;
-            font-size: 1.2em;
-        }
+    .btn-primary:hover {
+      background: var(--white);
+      transform: translateY(-1px);
+    }
 
-        .student-section a {
-            color: #667eea;
-            text-decoration: underline;
-        }
+    .btn-secondary {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border-bright);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: color 0.2s, border-color 0.2s;
+    }
 
-        .tech-info {
-            background: rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 30px;
-            margin: 40px 0;
-            color: white;
-        }
+    .btn-secondary:hover {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
 
-        .tech-info h3 {
-            margin-bottom: 15px;
-            font-size: 1.5em;
-        }
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      margin-top: 64px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+      animation: fade-up 0.8s 0.2s ease both;
+    }
 
-        .tech-info code {
-            background: rgba(0,0,0,0.2);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-        }
-    </style>
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-value {
+      font-family: 'Instrument Serif', serif;
+      font-size: 32px;
+      color: var(--white);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    /* ── VERIFIED BADGE ── */
+    .verified-banner {
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .verified-inner {
+      display: flex;
+      align-items: center;
+      gap: 48px;
+      white-space: nowrap;
+    }
+
+    .verified-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+
+    .verified-item .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .verified-item strong { color: var(--white); }
+
+    /* ── SECTION HEADERS ── */
+    section { padding: 100px 0; position: relative; z-index: 1; }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .section-title {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 400;
+      color: var(--white);
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    .section-title em { font-style: italic; color: var(--accent); }
+
+    .section-desc {
+      font-size: 17px;
+      color: var(--text-dim);
+      max-width: 560px;
+      line-height: 1.7;
+    }
+
+    /* ── FOUNDATION ── */
+    .foundation-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      margin-top: 64px;
+      border: 1px solid var(--border);
+    }
+
+    .foundation-cell {
+      background: var(--panel);
+      padding: 40px;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+
+    .foundation-cell:hover { background: #141e2a; }
+
+    .foundation-cell::before {
+      content: attr(data-num);
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dimmer);
+      letter-spacing: 0.08em;
+    }
+
+    .foundation-icon {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .foundation-icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 1.5;
+    }
+
+    .foundation-cell h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+
+    .foundation-cell p {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.65;
+    }
+
+    .foundation-cell .lean-badge {
+      margin-top: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--green);
+      padding: 4px 10px;
+      border: 1px solid var(--green-dim);
+      background: var(--green-dim);
+    }
+
+    /* ── TOOLS GRID ── */
+    .tools-section { background: var(--deep); }
+
+    .tools-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 48px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tool-tab {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 14px 24px;
+      color: var(--text-dim);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tool-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tool-tab:hover:not(.active) { color: var(--text); }
+
+    .tools-panel { display: none; }
+    .tools-panel.active { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2px; }
+
+    .tool-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 28px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .tool-card:hover { border-color: var(--border-bright); }
+
+    .tool-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 10px;
+      letter-spacing: 0.02em;
+    }
+
+    .tool-desc {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* ── PROFILES ── */
+    .profiles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      margin-top: 64px;
+    }
+
+    .profile-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 40px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .profile-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+
+    .profile-card.journalism::after { background: var(--gold); }
+    .profile-card.quant::after { background: var(--green); }
+    .profile-card.rhi::after { background: var(--accent); }
+
+    .profile-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: inline-block;
+      padding: 3px 8px;
+    }
+
+    .journalism .profile-tag { color: var(--gold); background: var(--gold-dim); }
+    .quant .profile-tag { color: var(--green); background: var(--green-dim); }
+    .rhi .profile-tag { color: var(--accent); background: var(--accent-dim); }
+
+    .profile-card h3 {
+      font-family: 'Instrument Serif', serif;
+      font-size: 26px;
+      font-weight: 400;
+      color: var(--white);
+      margin-bottom: 12px;
+    }
+
+    .profile-card p {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.65;
+      margin-bottom: 24px;
+    }
+
+    .profile-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .profile-features li {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .profile-features li::before {
+      content: '→';
+      color: var(--text-dimmer);
+      flex-shrink: 0;
+    }
+
+    /* ── PRICING ── */
+    #pricing { background: var(--black); }
+
+    .pricing-toggle {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 40px;
+      margin-bottom: 56px;
+    }
+
+    .toggle-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .toggle-label.active { color: var(--white); }
+
+    .toggle-switch {
+      width: 48px;
+      height: 24px;
+      background: var(--border);
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s;
+      border: 1px solid var(--border-bright);
+    }
+
+    .toggle-switch.quant-active { background: var(--green-dim); border-color: var(--green); }
+
+    .toggle-knob {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      transition: transform 0.3s, background 0.3s;
+    }
+
+    .toggle-switch.quant-active .toggle-knob {
+      transform: translateX(24px);
+      background: var(--green);
+    }
+
+    .pricing-grid {
+      display: grid;
+      gap: 2px;
+    }
+
+    .pricing-grid.core { grid-template-columns: repeat(4, 1fr); }
+    .pricing-grid.quant { grid-template-columns: repeat(4, 1fr); display: none; }
+    .pricing-grid.quant.show { display: grid; }
+    .pricing-grid.core.hide { display: none; }
+
+    .price-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .price-card:hover { border-color: var(--border-bright); }
+
+    .price-card.featured {
+      border-color: var(--accent);
+      background: #0d1e2e;
+    }
+
+    .price-card.featured::before {
+      content: 'MOST POPULAR';
+      position: absolute;
+      top: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      background: var(--accent);
+      color: var(--black);
+      padding: 3px 12px;
+    }
+
+    .price-card.quant-card.featured {
+      border-color: var(--green);
+      background: #0a1a12;
+    }
+
+    .price-card.quant-card.featured::before { background: var(--green); }
+
+    .price-tier {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+
+    .price-amount {
+      margin-bottom: 6px;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .price-dollar {
+      font-family: 'DM Mono', monospace;
+      font-size: 20px;
+      color: var(--text-dim);
+      align-self: flex-start;
+      margin-top: 6px;
+    }
+
+    .price-number {
+      font-family: 'Instrument Serif', serif;
+      font-size: 48px;
+      color: var(--white);
+      line-height: 1;
+    }
+
+    .price-period {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .price-requests {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .price-features {
+      list-style: none;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .price-features li {
+      font-size: 13px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      line-height: 1.4;
+    }
+
+    .price-features li::before {
+      content: '✓';
+      color: var(--accent);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .quant-card .price-features li::before { color: var(--green); }
+
+    .price-cta {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 12px 20px;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid var(--border-bright);
+      background: transparent;
+      color: var(--text-dim);
+      transition: all 0.2s;
+      text-decoration: none;
+      display: block;
+    }
+
+    .price-cta:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .price-card.featured .price-cta {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--black);
+    }
+
+    .price-card.featured .price-cta:hover {
+      background: var(--white);
+      border-color: var(--white);
+    }
+
+    .price-card.quant-card.featured .price-cta {
+      background: var(--green);
+      border-color: var(--green);
+      color: var(--black);
+    }
+
+    .price-card.quant-card.featured .price-cta:hover {
+      background: var(--white);
+    }
+
+    .price-custom {
+      font-family: 'Instrument Serif', serif;
+      font-size: 48px;
+      color: var(--white);
+      line-height: 1;
+      font-style: italic;
+    }
+
+    .student-note {
+      margin-top: 32px;
+      padding: 20px 28px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .student-note code {
+      background: var(--border);
+      color: var(--gold);
+      padding: 3px 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* ── LEAN VERIFICATION ── */
+    .lean-section {
+      background: var(--deep);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .lean-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .lean-code {
+      background: var(--black);
+      border: 1px solid var(--border);
+      padding: 32px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .lean-code::before {
+      content: 'Lean 4  ·  0 errors  ·  0 sorries';
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--green);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .lean-kw { color: #569cd6; }
+    .lean-name { color: var(--accent); }
+    .lean-type { color: #4ec9b0; }
+    .lean-comment { color: var(--text-dimmer); font-style: italic; }
+    .lean-string { color: var(--gold); }
+
+    .lean-proof-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 40px;
+    }
+
+    .lean-proof-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 20px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .lean-proof-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--green-dim);
+      border: 1px solid var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: var(--green);
+    }
+
+    .lean-proof-item h4 {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+
+    .lean-proof-item p {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* ── ZENODO CITATION ── */
+    .citation-box {
+      margin-top: 64px;
+      padding: 32px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    .citation-box .doi {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+    }
+
+    .citation-box a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* ── INSTALL ── */
+    .install-section { background: var(--black); }
+
+    .install-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      margin-top: 64px;
+    }
+
+    .install-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 40px;
+    }
+
+    .install-panel h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .os-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      padding: 2px 8px;
+      background: var(--border);
+      color: var(--text-dim);
+    }
+
+    .code-block {
+      background: var(--black);
+      border: 1px solid var(--border);
+      padding: 20px 24px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+      margin-bottom: 16px;
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .code-block .prompt {
+      color: var(--text-dimmer);
+      user-select: none;
+    }
+
+    .code-block .cmd { color: var(--accent); }
+    .code-block .str { color: var(--gold); }
+    .code-block .key { color: #4ec9b0; }
+    .code-block .val { color: var(--text); }
+
+    .install-note {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--deep);
+      border-top: 1px solid var(--border);
+      padding: 60px 0 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    .footer-brand p {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-top: 16px;
+      line-height: 1.65;
+      max-width: 280px;
+    }
+
+    .footer-brand .tagline {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--text-dimmer);
+      margin-top: 12px;
+      font-style: italic;
+    }
+
+    .footer-col h4 {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-col a {
+      font-size: 14px;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-col a:hover { color: var(--accent); }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-bottom p {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dimmer);
+    }
+
+    .footer-bottom a {
+      color: var(--text-dimmer);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-bottom a:hover { color: var(--text-dim); }
+
+    /* ── ANIMATIONS ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .foundation-grid,
+      .install-grid,
+      .lean-grid { grid-template-columns: 1fr; }
+      .profiles-grid { grid-template-columns: 1fr; }
+      .pricing-grid.core,
+      .pricing-grid.quant { grid-template-columns: 1fr 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .hero-stats { gap: 32px; }
+      .nav-links { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      .pricing-grid.core,
+      .pricing-grid.quant { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .container { padding: 0 20px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <img src="/static/logo.png" alt="Chavez AI Labs" class="logo">
-            <h1>CAILculator MCP</h1>
-            <p class="tagline">"Better math, less suffering"</p>
-            <p class="subtitle">High-dimensional data analysis via Model Context Protocol</p>
-        </header>
 
-        <div class="features">
-            <h2>Why CAILculator?</h2>
-            <div class="feature-grid">
-                <div class="feature">
-                    <h3>Research-Grade</h3>
-                    <p>Built on published mathematical research with proven theorems</p>
-                </div>
-                <div class="feature">
-                    <h3>Dual Frameworks</h3>
-                    <p>Cayley-Dickson and Clifford algebras for comprehensive analysis</p>
-                </div>
-                <div class="feature">
-                    <h3>16D to 256D Analysis</h3>
-                    <p>Handle complexity traditional algebras can't reach</p>
-                </div>
-                <div class="feature">
-                    <h3>E8 Lie Algebra Integration</h3>
-                    <p>Connect exceptional geometry to zero divisor transforms</p>
-                </div>
-                <div class="feature">
-                    <h3>Applied Pathological Mathematics™</h3>
-                    <p>Exploit higher-dimensional algebras for computational advantage</p>
-                </div>
-                <div class="feature">
-                    <h3>AI-Native</h3>
-                    <p>Works seamlessly with Claude Desktop and other MCP clients</p>
-                </div>
-            </div>
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo" href="/">
+        <div class="nav-logo-mark">
+          <span></span><span></span><span></span><span></span>
         </div>
+        <span class="nav-logo-text">CAILculator</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#foundation">Foundation</a></li>
+        <li><a href="#tools">Tools</a></li>
+        <li><a href="#profiles">Profiles</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a class="nav-cta" href="#pricing">Get API Key</a></li>
+      </ul>
+    </div>
+  </nav>
 
-        <div class="pricing">
-            <h2>Choose Your Plan</h2>
-
-            <!-- Standard Tiers Section -->
-            <div class="pricing-grid">
-                <div class="pricing-card">
-                    <h3>Individual</h3>
-                    <div class="price">$79.99<span class="price-period">/month</span></div>
-                    <div class="requests">25,000 requests/month</div>
-                    <ul class="features-list">
-                        <li>Zero divisor detection</li>
-                        <li>Pattern analysis</li>
-                        <li>Chavez Transform</li>
-                        <li>Advanced visualizations</li>
-                        <li>E8 lattice analysis</li>
-                        <li>Email support</li>
-                    </ul>
-                    <button class="subscribe-btn" onclick="subscribe('individual')">Subscribe</button>
-                </div>
-
-                <div class="pricing-card featured">
-                    <h3>Academic</h3>
-                    <div class="price">$199<span class="price-period">/month</span></div>
-                    <div class="requests">75,000 requests/month</div>
-                    <ul class="features-list">
-                        <li>Everything in Individual</li>
-                        <li>Priority support</li>
-                        <li>Research collaboration</li>
-                        <li>Citation assistance</li>
-                        <li>Classroom use</li>
-                    </ul>
-                    <button class="subscribe-btn" onclick="subscribe('academic')">Subscribe</button>
-                </div>
-
-                <div class="pricing-card">
-                    <h3>Commercial</h3>
-                    <div class="price">$299<span class="price-period">/month per seat</span></div>
-                    <div class="requests">250,000 requests/month</div>
-                    <ul class="features-list">
-                        <li>Everything in Academic</li>
-                        <li>Dedicated support</li>
-                        <li>Custom integrations</li>
-                        <li>Usage analytics</li>
-                        <li>Team management</li>
-                    </ul>
-                    <button class="subscribe-btn" onclick="subscribe('commercial')">Subscribe</button>
-                </div>
-
-                <div class="pricing-card">
-                    <h3>Enterprise</h3>
-                    <div class="price">Custom</div>
-                    <div class="requests">Unlimited requests</div>
-                    <ul class="features-list">
-                        <li>Multiple API keys</li>
-                        <li>SLA guarantees</li>
-                        <li>White-label options</li>
-                        <li>Phone & Slack support</li>
-                    </ul>
-                    <a href="mailto:iknowpi@gmail.com" class="subscribe-btn">Contact Sales</a>
-                </div>
-            </div>
-
-            <!-- Quant Trader Section -->
-            <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 40px; margin-top: 60px; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
-                <h3 style="color: #667eea; font-size: 2.2em; text-align: center; margin-bottom: 15px;">🔬 Quantitative Finance Tier - BETA</h3>
-                <p style="text-align: center; color: #555; font-size: 1.2em; margin-bottom: 15px;"><strong>For serious quantitative analysts who work with large datasets</strong></p>
-                <p style="text-align: center; color: #764ba2; font-size: 1.3em; font-weight: bold; margin-bottom: 5px;">🎉 Limited Time Beta Discount: 30% Off 🎉</p>
-                <p style="text-align: center; color: #667eea; font-size: 1.1em; font-weight: bold; margin-bottom: 30px;">Use promo code <code style="background: #f0f0f0; padding: 5px 12px; border-radius: 6px; font-family: 'Courier New', monospace; color: #764ba2;">BETA30</code> at checkout</p>
-                <p style="text-align: center; color: #666; margin-bottom: 40px;">
-                    <strong>Optimized for Gemini CLI (recommended)</strong> - Large context window for GB-scale analysis<br>
-                    <em>Also supports: Claude Desktop, Claude Code (datasets &lt;100MB recommended)</em>
-                </p>
-
-                <div class="pricing-grid">
-                <div class="pricing-card">
-                    <h3>Quant Explorer</h3>
-                    <div class="price">$599<span class="price-period">/month</span></div>
-                    <div class="requests">Try our unique dual-method approach</div>
-                    <ul class="features-list">
-                        <li>Full dual-method regime detection</li>
-                        <li>All 10 technical indicators</li>
-                        <li>All 3 terminology levels</li>
-                        <li>Up to 50K records per analysis</li>
-                        <li>Email support (24hr response)</li>
-                    </ul>
-                    <button class="subscribe-btn" onclick="subscribe('quant_explorer')">Subscribe</button>
-                </div>
-
-                <div class="pricing-card featured">
-                    <h3>Quant Professional</h3>
-                    <div class="price">$1,499<span class="price-period">/month</span></div>
-                    <div class="requests">Scale it up for serious analysis</div>
-                    <ul class="features-list">
-                        <li>Everything in Explorer, plus:</li>
-                        <li>Up to 5M records per analysis (100x more)</li>
-                        <li>Batch processing for large datasets</li>
-                        <li>API access for automation</li>
-                        <li>1 custom pattern analysis per month</li>
-                        <li>Priority support (2hr response)</li>
-                    </ul>
-                    <button class="subscribe-btn" onclick="subscribe('quant_professional')">Subscribe</button>
-                </div>
-
-                <div class="pricing-card">
-                    <h3>Quant Elite</h3>
-                    <div class="price">$3,499<span class="price-period">/month</span></div>
-                    <div class="requests">Partner with us to master it</div>
-                    <ul class="features-list">
-                        <li>Everything in Professional, plus:</li>
-                        <li>Unlimited records + GB-scale processing</li>
-                        <li>Monthly 60min strategy session</li>
-                        <li>2 custom developments per month</li>
-                        <li>Dedicated support (Slack/Discord)</li>
-                        <li>White-label option available</li>
-                    </ul>
-                    <button class="subscribe-btn" onclick="subscribe('quant_elite')">Subscribe</button>
-                </div>
-
-                <div class="pricing-card">
-                    <h3>Quant Enterprise</h3>
-                    <div class="price">$10K+<span class="price-period">/month</span></div>
-                    <div class="requests">Custom deployment & research partnership</div>
-                    <ul class="features-list">
-                        <li>Everything in Elite, plus:</li>
-                        <li>On-premise deployment options</li>
-                        <li>Team training and onboarding</li>
-                        <li>Research partnership collaboration</li>
-                        <li>Custom indicators & methodologies</li>
-                        <li>SLA guarantees</li>
-                    </ul>
-                    <a href="mailto:iknowpi@gmail.com" class="subscribe-btn">Contact Sales</a>
-                </div>
-            </div>
-
-            <!-- Student Discount Section -->
-            <div class="student-section">
-                <h3>Students</h3>
-                <p><strong>Current Students:</strong> Use coupon code <code>STUDENT2025</code> at checkout for substantial savings off Individual pricing.</p>
-                <p><strong>Need help?</strong> Email <a href="mailto:iknowpi@gmail.com">iknowpi@gmail.com</a> with your .edu email address.</p>
-            </div>
-        </div>
-
-        <div class="tech-info">
-            <h3>For Developers</h3>
-            <p><strong>Installation:</strong></p>
-            <code>pip install cailculator-mcp</code>
-            <p style="margin-top: 20px;"><strong>GitHub:</strong> <a href="https://github.com/pchavez2029/cailculator-mcp" target="_blank">github.com/pchavez2029/cailculator-mcp</a></p>
-        </div>
-
-        <footer>
-            <img src="/static/logo.png" alt="Chavez AI Labs" class="footer-logo">
-            <p><strong>Chavez AI Labs</strong></p>
-            <p>Built on research published at <a href="https://zenodo.org/records/17402496" target="_blank">DOI: 10.5281/zenodo.17402496</a></p>
-            <p style="margin-top: 10px;">Contact: <a href="mailto:iknowpi@gmail.com">iknowpi@gmail.com</a></p>
-        </footer>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg">
+      <!-- Sedenion-like 16-vertex hypercube wireframe -->
+      <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" stroke="#00d4ff" fill="none" stroke-width="0.5">
+        <circle cx="200" cy="200" r="180" stroke-dasharray="4 8"/>
+        <circle cx="200" cy="200" r="120" stroke-dasharray="2 6"/>
+        <circle cx="200" cy="200" r="60"/>
+        <line x1="20" y1="200" x2="380" y2="200"/>
+        <line x1="200" y1="20" x2="200" y2="380"/>
+        <line x1="72" y1="72" x2="328" y2="328"/>
+        <line x1="328" y1="72" x2="72" y2="328"/>
+        <line x1="20" y1="110" x2="380" y2="290"/>
+        <line x1="20" y1="290" x2="380" y2="110"/>
+        <line x1="110" y1="20" x2="290" y2="380"/>
+        <line x1="290" y1="20" x2="110" y2="380"/>
+        <circle cx="200" cy="20" r="4" fill="#00d4ff"/>
+        <circle cx="200" cy="380" r="4" fill="#00d4ff"/>
+        <circle cx="20" cy="200" r="4" fill="#00d4ff"/>
+        <circle cx="380" cy="200" r="4" fill="#00d4ff"/>
+        <circle cx="72" cy="72" r="4" fill="#00d4ff"/>
+        <circle cx="328" cy="328" r="4" fill="#00d4ff"/>
+        <circle cx="328" cy="72" r="4" fill="#00d4ff"/>
+        <circle cx="72" cy="328" r="4" fill="#00d4ff"/>
+        <circle cx="200" cy="80" r="3" fill="none" stroke="#00d4ff"/>
+        <circle cx="200" cy="320" r="3" fill="none" stroke="#00d4ff"/>
+        <circle cx="80" cy="200" r="3" fill="none" stroke="#00d4ff"/>
+        <circle cx="320" cy="200" r="3" fill="none" stroke="#00d4ff"/>
+        <circle cx="200" cy="200" r="8" fill="#00d4ff" opacity="0.6"/>
+      </svg>
+      <div class="hero-glow"></div>
     </div>
 
-    <script>
-        function subscribe(tier) {
-            // Redirect to Stripe checkout
-            window.location.href = `/create-checkout-session?tier=${tier}`;
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-tag">Applied Pathological Mathematics™</div>
+        <h1 class="hero-title">
+          Better math.<br>
+          <em>Less suffering.</em>
+        </h1>
+        <div class="hero-subtitle">CAILculator MCP Server — v2.0.3 — Formally Verified</div>
+        <p class="hero-desc">
+          High-dimensional mathematical analysis for AI agents. Built on <strong>16-dimensional sedenion algebra</strong> — the structures dismissed as pathological — now formally verified in Lean 4 and deployed as a Model Context Protocol server.
+        </p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="#pricing">Get API Key</a>
+          <a class="btn-secondary" href="https://github.com/ChavezAILabs/cailculator-mcp" target="_blank">View on GitHub</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-value">16D</span>
+            <span class="stat-label">Sedenion Space</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">10⁻¹⁵</span>
+            <span class="stat-label">Precision Floor</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">0</span>
+            <span class="stat-label">Lean Sorries</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">38</span>
+            <span class="stat-label">Orders of Magnitude</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VERIFIED BANNER -->
+  <div class="verified-banner">
+    <div class="container">
+      <div class="verified-inner">
+        <div class="verified-item"><span class="dot"></span> <strong>Lean 4 Verified</strong> — BilateralCollapse.lean · ChavezTransform_genuine.lean</div>
+        <div class="verified-item"><span class="dot"></span> <strong>Zero Sorries</strong> — Machine-verified proofs, no placeholders</div>
+        <div class="verified-item"><span class="dot"></span> <strong>DOI: 10.5281/zenodo.17402495</strong> — Published research foundation</div>
+        <div class="verified-item"><span class="dot"></span> <strong>Dual Algebra Support</strong> — Cayley-Dickson + Clifford frameworks</div>
+        <div class="verified-item"><span class="dot"></span> <strong>MCP Native</strong> — Claude Desktop · Claude Code · Gemini CLI</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOUNDATION -->
+  <section id="foundation">
+    <div class="container">
+      <div class="section-label">Mathematical Foundation</div>
+      <h2 class="section-title">Pathological by design.<br><em>Powerful by proof.</em></h2>
+      <p class="section-desc">CAILculator treats structures that conventional mathematics discards as computational resources. Every claim is machine-verified.</p>
+
+      <div class="foundation-grid fade-in">
+        <div class="foundation-cell" data-num="01">
+          <div class="foundation-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/><line x1="18.4" y1="5.6" x2="5.6" y2="18.4"/></svg>
+          </div>
+          <h3>Zero Divisors</h3>
+          <p>Non-zero elements P, Q where P × Q = 0. In 16D sedenion space there are 84 base patterns — formally enumerated and verified. CAILculator's oracle layer dispatches on (P,Q) object pairs, not labels.</p>
+          <span class="lean-badge">✓ Lean Verified</span>
+        </div>
+
+        <div class="foundation-cell" data-num="02">
+          <div class="foundation-icon">
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>Chavez Transform</h3>
+          <p>38 orders of magnitude dynamic range. Stability constant M = 2·(‖P‖²+‖Q‖²)/(α·e) is Lean-proved — not empirically estimated. Transform outputs are checked against the verified bound at runtime.</p>
+          <span class="lean-badge">✓ Stability Proved</span>
+        </div>
+
+        <div class="foundation-cell" data-num="03">
+          <div class="foundation-icon">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 22 20 2 20"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17" r="0.5" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <h3>Canonical Six</h3>
+          <p>Six framework-independent bilateral zero-divisor patterns persisting from 16D through 256D in both Cayley-Dickson and Clifford algebras. Identified as lying on the E8 first shell, forming a single Weyl orbit.</p>
+          <span class="lean-badge">✓ E8 Orbit Verified</span>
+        </div>
+
+        <div class="foundation-cell" data-num="04">
+          <div class="foundation-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          <h3>Dual Algebra Frameworks</h3>
+          <p>Native support for both non-associative Cayley-Dickson algebras and associative Clifford (geometric) algebras. The bilateral oracle runs parity-verified across both frameworks simultaneously.</p>
+          <span class="lean-badge">✓ Clifford Bridge Verified</span>
+        </div>
+
+        <div class="foundation-cell" data-num="05">
+          <div class="foundation-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+          </div>
+          <h3>ZDTP Transmission</h3>
+          <p>Zero Divisor Transmission Protocol — transmit data through verified mathematical gateways (S1–S6) to 32D and 64D spaces. Bilateral annihilation confirmed universal across all 50 Riemann zeros tested.</p>
+          <span class="lean-badge">✓ Bilateral Collapse Proved</span>
+        </div>
+
+        <div class="foundation-cell" data-num="06">
+          <div class="foundation-icon">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+          </div>
+          <h3>Domain Profile System</h3>
+          <p>Universal algebraic layer stays Lean-anchored. Domain projections are pluggable profiles: Journalism, Quant Equity, and RHI ship as reference implementations. Custom profiles available on request.</p>
+          <span class="lean-badge">✓ v2.0 Architecture</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOLS -->
+  <section id="tools" class="tools-section">
+    <div class="container">
+      <div class="section-label">MCP Tools</div>
+      <h2 class="section-title">8 tools. One <em>verified</em> core.</h2>
+      <p class="section-desc">Every tool dispatches on Lean-verified (P,Q) object pairs. No label-based heuristics. Stability bounds checked at output time.</p>
+
+      <div class="tools-tabs">
+        <button class="tool-tab active" onclick="switchTab('core')">Core Engine</button>
+        <button class="tool-tab" onclick="switchTab('domain')">Domain Intelligence</button>
+        <button class="tool-tab" onclick="switchTab('quant')">Financial Analysis</button>
+      </div>
+
+      <div id="tab-core" class="tools-panel active">
+        <div class="tool-card">
+          <div class="tool-name">chavez_transform</div>
+          <div class="tool-desc">Apply the formally verified Chavez Transform to find hidden structure in data. Stability bound M checked at every output. 38 orders of magnitude dynamic range.</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">verify_bilateral_oracle</div>
+          <div class="tool-desc">High-precision check (10⁻¹⁵) for any zero divisor pair P·Q=0 ∧ Q·P=0. Supports both Cayley-Dickson and Clifford frameworks with full parity verification.</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">detect_patterns</div>
+          <div class="tool-desc">Algebraic detection of Tipping Points and Pattern Consistency via oracle-backed dispatch. All pattern_id routing is on verified (P,Q) objects, not semantic labels.</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">map_e8_orbit</div>
+          <div class="tool-desc">Project 16D/32D vectors onto verified E8 Weyl orbits. The Canonical Six are confirmed members of the E8 first shell, forming a single 24-element Weyl orbit family.</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">illustrate</div>
+          <div class="tool-desc">Generate high-precision visualizations of algebraic structures — zero divisor lattices, Weyl orbit projections, transform convergence plots, and gateway interaction diagrams.</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">get_version</div>
+          <div class="tool-desc">Returns current server version, active profile, Lean proof inventory, and axiom footprint. Use to verify your deployment matches the expected verified core.</div>
+        </div>
+      </div>
+
+      <div id="tab-domain" class="tools-panel">
+        <div class="tool-card">
+          <div class="tool-name">list_domain_profiles</div>
+          <div class="tool-desc">Enumerate available domain profiles (Journalism, Quant Equity, RHI). Each profile declares its coefficient mappings, gateway labels, used theorems, and empirical dependencies separately.</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">zdtp_transmit</div>
+          <div class="tool-desc">Transmit data through verified mathematical gateways S1–S6 to 32D and 64D spaces. Gateway semantic labels are profile-specific; the underlying (P,Q) pairs are Lean-proved universal.</div>
+        </div>
+      </div>
+
+      <div id="tab-quant" class="tools-panel">
+        <div class="tool-card">
+          <div class="tool-name">regime_detection</div>
+          <div class="tool-desc">Dual-method market analysis combining Hidden Markov Model baseline with Chavez Transform structural analysis. Bridges statistical and algebraic approaches for regime identification.</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">batch_analyze_market</div>
+          <div class="tool-desc">Smart sampling strategy for large-scale datasets. Handles up to 5M records (Professional) or unlimited GB-scale (Elite). Preserves OHLCV coefficient mapping through profile invariants.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROFILES -->
+  <section id="profiles">
+    <div class="container">
+      <div class="section-label fade-in">Domain Profiles</div>
+      <h2 class="section-title fade-in">Universal algebra.<br><em>Domain intelligence.</em></h2>
+      <p class="section-desc fade-in">The verified core stays universal. Domain projections are declared profile objects with versioned manifests, explicit evidence references, and auditable empirical dependencies.</p>
+
+      <div class="profiles-grid fade-in">
+        <div class="profile-card journalism">
+          <span class="profile-tag">Journalism</span>
+          <h3>Investigative<br>Analysis</h3>
+          <p>Algebraic pattern detection optimized for data reporting. Treat structural collapses in budgets, consensus, and policy the way zero divisors treat dimensionality.</p>
+          <ul class="profile-features">
+            <li>Tipping point detection via bilateral zeros</li>
+            <li>Sourcing confidence from transform convergence</li>
+            <li>Pattern consistency across data series</li>
+            <li>Three-tier terminology: technical / standard / plain</li>
+          </ul>
+        </div>
+
+        <div class="profile-card quant">
+          <span class="profile-tag">Quant Equity</span>
+          <h3>Market<br>Regime Detection</h3>
+          <p>Dual-method analysis bridging HMM statistical baselines with algebraic structural analysis. OHLCV coefficient mapping to sedenion gateways, RSI/MACD/Bollinger interpretation.</p>
+          <ul class="profile-features">
+            <li>Regime detection: HMM + Chavez Transform</li>
+            <li>10 technical indicators with algebraic anchors</li>
+            <li>Volatility anchors at zero-divisor loci</li>
+            <li>Bifurcation risk via bilateral threshold analysis</li>
+          </ul>
+        </div>
+
+        <div class="profile-card rhi">
+          <span class="profile-tag">RHI — Research</span>
+          <h3>Riemann Hypothesis<br>Investigation</h3>
+          <p>Spectral research mapping and prime embedding analysis. The active profile powering an open-science Riemann Hypothesis investigation, with Phase 72 introducing the Sedenionic Hamiltonian H(s).</p>
+          <ul class="profile-features">
+            <li>Prime embedding: log p → ROOT_16D</li>
+            <li>ZDTP convergence tracking across γₙ</li>
+            <li>S3B=S4 bilateral gateway pairing (proved)</li>
+            <li>Sedenionic Hamiltonian operator support</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEAN VERIFICATION -->
+  <section class="lean-section">
+    <div class="container">
+      <div class="lean-grid">
+        <div>
+          <div class="section-label fade-in">Formal Verification</div>
+          <h2 class="section-title fade-in">Not approximated.<br><em>Proved.</em></h2>
+          <p class="section-desc fade-in" style="margin-bottom:0">Core algebraic properties are machine-verified in Lean 4 with Aristotle co-authorship. Every oracle tool has non-triviality tests confirming it produces distinct outputs on distinct inputs.</p>
+
+          <div class="lean-proof-list fade-in">
+            <div class="lean-proof-item">
+              <div class="lean-proof-icon">✓</div>
+              <div>
+                <h4>BilateralCollapse.lean</h4>
+                <p>Proves P·Q = 0 ∧ Q·P = 0 for all Canonical Six pairs. The oracle used to gate every ZDTP transmission.</p>
+              </div>
+            </div>
+            <div class="lean-proof-item">
+              <div class="lean-proof-icon">✓</div>
+              <div>
+                <h4>ChavezTransform_genuine.lean</h4>
+                <p>Stability constant M, unconditional absolute convergence, pattern invariance across dimensional scaling.</p>
+              </div>
+            </div>
+            <div class="lean-proof-item">
+              <div class="lean-proof-icon">✓</div>
+              <div>
+                <h4>e8_weyl_orbit_unification.lean</h4>
+                <p>Canonical Six confirmed on E8 first shell, forming a single Weyl orbit generating a 24-element zero divisor family.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="citation-box fade-in">
+            <div>
+              <div class="doi">Published research foundation</div>
+              <div class="doi" style="margin-top:6px">DOI: <a href="https://doi.org/10.5281/zenodo.17402495" target="_blank">10.5281/zenodo.17402495</a></div>
+              <div class="doi" style="margin-top:6px; color: #2a4060">Canonical Six v1.4 · Addendum D: Bilateral Collapse Theorem</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lean-code fade-in">
+<span class="lean-comment">-- BilateralCollapse.lean (excerpt)</span>
+<span class="lean-comment">-- 0 errors · 0 sorries · standard axioms only</span>
+
+<span class="lean-kw">theorem</span> <span class="lean-name">bilateral_collapse_universal</span>
+    <span class="lean-type">(P Q : Sedenion)</span>
+    <span class="lean-type">(hP : P ∈ canonical_six)</span>
+    <span class="lean-type">(hQ : Q ∈ canonical_six)</span> :
+    <span class="lean-name">P * Q = 0</span> <span class="lean-kw">∧</span> <span class="lean-name">Q * P = 0</span> := <span class="lean-kw">by</span>
+  <span class="lean-name">exact bilateral_collapse_iff.mpr</span>
+    ⟨<span class="lean-name">canonical_mul_zero hP hQ</span>,
+     <span class="lean-name">canonical_mul_zero hQ hP</span>⟩
+
+<span class="lean-kw">theorem</span> <span class="lean-name">stability_bound</span>
+    <span class="lean-type">(f : ℝ → Sedenion)</span>
+    <span class="lean-type">(α : ℝ) (hα : 0 < α)</span>
+    <span class="lean-type">(P Q : Sedenion)</span>
+    <span class="lean-type">(hPQ : P * Q = 0)</span> :
+    <span class="lean-name">‖C[f]‖ ≤ M P Q α</span> := <span class="lean-kw">by</span>
+  <span class="lean-name">exact chavez_stability hα hPQ</span>
+
+<span class="lean-kw">where</span> <span class="lean-name">M P Q α</span> :=
+  <span class="lean-string">2 * (‖P‖² + ‖Q‖²) / (α * Real.exp 1)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing">
+    <div class="container">
+      <div class="section-label fade-in">Pricing</div>
+      <h2 class="section-title fade-in">Choose your<br><em>depth of analysis.</em></h2>
+      <p class="section-desc fade-in">API key delivered within 24 hours of subscription. Students save with code <code style="font-family:'DM Mono',monospace;color:var(--gold);font-size:14px">STUDENT2025</code> at checkout.</p>
+
+      <div class="pricing-toggle fade-in">
+        <span class="toggle-label active" id="label-core">Core / Research</span>
+        <div class="toggle-switch" id="pricing-toggle" onclick="togglePricing()">
+          <div class="toggle-knob"></div>
+        </div>
+        <span class="toggle-label" id="label-quant">Quant Equity</span>
+      </div>
+
+      <!-- CORE TIERS -->
+      <div class="pricing-grid core fade-in" id="grid-core">
+        <div class="price-card">
+          <div class="price-tier">Individual</div>
+          <div class="price-amount">
+            <span class="price-dollar">$</span>
+            <span class="price-number">79</span>
+            <span class="price-period">.99/mo</span>
+          </div>
+          <div class="price-requests">25,000 requests / month</div>
+          <ul class="price-features">
+            <li>Zero divisor detection</li>
+            <li>Pattern analysis</li>
+            <li>Chavez Transform</li>
+            <li>Advanced visualizations</li>
+            <li>E8 lattice analysis</li>
+            <li>Email support</li>
+          </ul>
+          <a class="price-cta" href="/create-checkout-session?tier=individual">Subscribe</a>
+        </div>
+
+        <div class="price-card featured">
+          <div class="price-tier">Academic</div>
+          <div class="price-amount">
+            <span class="price-dollar">$</span>
+            <span class="price-number">199</span>
+            <span class="price-period">/mo</span>
+          </div>
+          <div class="price-requests">75,000 requests / month</div>
+          <ul class="price-features">
+            <li>Everything in Individual</li>
+            <li>Priority support</li>
+            <li>Research collaboration</li>
+            <li>Citation assistance</li>
+            <li>Classroom use</li>
+          </ul>
+          <a class="price-cta" href="/create-checkout-session?tier=academic">Subscribe</a>
+        </div>
+
+        <div class="price-card">
+          <div class="price-tier">Commercial</div>
+          <div class="price-amount">
+            <span class="price-dollar">$</span>
+            <span class="price-number">299</span>
+            <span class="price-period">/seat/mo</span>
+          </div>
+          <div class="price-requests">250,000 requests / month</div>
+          <ul class="price-features">
+            <li>Everything in Academic</li>
+            <li>Dedicated support</li>
+            <li>Custom integrations</li>
+            <li>Usage analytics</li>
+            <li>Team management</li>
+          </ul>
+          <a class="price-cta" href="/create-checkout-session?tier=commercial">Subscribe</a>
+        </div>
+
+        <div class="price-card">
+          <div class="price-tier">Enterprise</div>
+          <div class="price-amount">
+            <span class="price-custom">Custom</span>
+          </div>
+          <div class="price-requests">Unlimited requests</div>
+          <ul class="price-features">
+            <li>Multiple API keys</li>
+            <li>SLA guarantees</li>
+            <li>White-label options</li>
+            <li>Phone &amp; Slack support</li>
+          </ul>
+          <a class="price-cta" href="mailto:paul@chavezailabs.com?subject=Enterprise Inquiry">Contact Us</a>
+        </div>
+      </div>
+
+      <!-- QUANT TIERS -->
+      <div class="pricing-grid quant" id="grid-quant">
+        <div class="price-card quant-card">
+          <div class="price-tier">Quant Explorer</div>
+          <div class="price-amount">
+            <span class="price-dollar">$</span>
+            <span class="price-number">599</span>
+            <span class="price-period">/mo</span>
+          </div>
+          <div class="price-requests">Try our unique dual-method approach</div>
+          <ul class="price-features">
+            <li>Full dual-method regime detection</li>
+            <li>All 10 technical indicators</li>
+            <li>All 3 terminology levels</li>
+            <li>Up to 50K records per analysis</li>
+            <li>Email support (24hr response)</li>
+          </ul>
+          <a class="price-cta" href="/create-checkout-session?tier=quant_explorer">Subscribe</a>
+        </div>
+
+        <div class="price-card quant-card featured">
+          <div class="price-tier">Quant Professional</div>
+          <div class="price-amount">
+            <span class="price-dollar">$</span>
+            <span class="price-number">1,499</span>
+            <span class="price-period">/mo</span>
+          </div>
+          <div class="price-requests">Scale it up for serious analysis</div>
+          <ul class="price-features">
+            <li>Everything in Explorer, plus:</li>
+            <li>Up to 5M records (100× more)</li>
+            <li>Batch processing for large datasets</li>
+            <li>API access for automation</li>
+            <li>1 custom pattern analysis / month</li>
+            <li>Priority support (2hr response)</li>
+          </ul>
+          <a class="price-cta" href="/create-checkout-session?tier=quant_professional">Subscribe</a>
+        </div>
+
+        <div class="price-card quant-card">
+          <div class="price-tier">Quant Elite</div>
+          <div class="price-amount">
+            <span class="price-dollar">$</span>
+            <span class="price-number">3,499</span>
+            <span class="price-period">/mo</span>
+          </div>
+          <div class="price-requests">Partner with us to master it</div>
+          <ul class="price-features">
+            <li>Everything in Professional, plus:</li>
+            <li>Unlimited records + GB-scale processing</li>
+            <li>Monthly 60min strategy session</li>
+            <li>2 custom developments / month</li>
+            <li>Dedicated support (Slack/Discord)</li>
+            <li>White-label option available</li>
+          </ul>
+          <a class="price-cta" href="/create-checkout-session?tier=quant_elite">Subscribe</a>
+        </div>
+
+        <div class="price-card quant-card">
+          <div class="price-tier">Quant Enterprise</div>
+          <div class="price-amount">
+            <span class="price-custom">$10K+</span>
+          </div>
+          <div class="price-requests">Custom deployment &amp; research partnership</div>
+          <ul class="price-features">
+            <li>Everything in Elite, plus:</li>
+            <li>On-premise deployment options</li>
+            <li>Team training &amp; onboarding</li>
+            <li>Research partnership collaboration</li>
+            <li>Custom indicators &amp; methodologies</li>
+            <li>SLA guarantees</li>
+          </ul>
+          <a class="price-cta" href="mailto:paul@chavezailabs.com?subject=Quant Enterprise Inquiry">Contact Us</a>
+        </div>
+      </div>
+
+      <div class="student-note fade-in">
+        <span style="font-size:18px">🎓</span>
+        <span>Students: use code <code>STUDENT2025</code> at checkout for savings off Individual pricing.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section id="install" class="install-section">
+    <div class="container">
+      <div class="section-label fade-in">Installation</div>
+      <h2 class="section-title fade-in">Up in<br><em>three steps.</em></h2>
+      <p class="section-desc fade-in">Python 3.10–3.13, 64-bit. Windows 10/11, macOS 10.15+, Ubuntu 20.04+.</p>
+
+      <div class="install-grid fade-in">
+        <div class="install-panel">
+          <h3><span class="os-badge">Windows</span> Claude Desktop</h3>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">pip install cailculator_mcp</span>
+          </div>
+          <p class="install-note" style="margin-bottom:16px">Open <code style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim)">%APPDATA%\Claude\claude_desktop_config.json</code> and add:</p>
+          <div class="code-block" style="font-size:12px;line-height:1.9">
+{<br>
+&nbsp;&nbsp;<span class="key">"mcpServers"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"cailculator"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"command"</span>: <span class="str">"cailculator-mcp"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"args"</span>: [<span class="str">"--transport"</span>, <span class="str">"stdio"</span>],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"env"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"CAILCULATOR_API_KEY"</span>: <span class="str">"your_api_key"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+          </div>
+        </div>
+
+        <div class="install-panel">
+          <h3><span class="os-badge">macOS / Linux</span> Claude Desktop</h3>
+          <div class="code-block">
+            <span class="prompt">$ </span><span class="cmd">pip install cailculator_mcp</span>
+          </div>
+          <p class="install-note" style="margin-bottom:16px">Open <code style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim)">~/Library/Application Support/Claude/claude_desktop_config.json</code> and add:</p>
+          <div class="code-block" style="font-size:12px;line-height:1.9">
+{<br>
+&nbsp;&nbsp;<span class="key">"mcpServers"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"cailculator"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"command"</span>: <span class="str">"cailculator-mcp"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"args"</span>: [<span class="str">"--transport"</span>, <span class="str">"stdio"</span>],<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"env"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"CAILCULATOR_API_KEY"</span>: <span class="str">"your_api_key"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}
+          </div>
+        </div>
+      </div>
+
+      <div class="install-panel fade-in" style="margin-top:2px;background:var(--panel);border:1px solid var(--border);padding:32px 40px;">
+        <h3 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:20px">Claude Code / Gemini CLI <span class="os-badge">HTTP Transport</span></h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;">
+          <div>
+            <p class="install-note" style="margin-bottom:12px;color:var(--text-dim);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em">CLAUDE CODE</p>
+            <div class="code-block" style="font-size:12px">
+              <span class="cmd">claude mcp add cailculator \</span><br>
+              &nbsp;&nbsp;--transport http \<br>
+              &nbsp;&nbsp;--url https://cailculator-mcp-production.up.railway.app/mcp \<br>
+              &nbsp;&nbsp;--header <span class="str">"X-API-Key: your_api_key"</span>
+            </div>
+          </div>
+          <div>
+            <p class="install-note" style="margin-bottom:12px;color:var(--text-dim);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em">GEMINI CLI</p>
+            <div class="code-block" style="font-size:12px">
+              <span class="cmd">gemini mcp add</span> \<br>
+              &nbsp;&nbsp;--name cailculator \<br>
+              &nbsp;&nbsp;--url https://cailculator-mcp-production.up.railway.app/mcp \<br>
+              &nbsp;&nbsp;--api-key <span class="str">your_api_key</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="nav-logo" style="display:flex;align-items:center;gap:12px;text-decoration:none">
+            <div class="nav-logo-mark"><span></span><span></span><span></span><span></span></div>
+            <span class="nav-logo-text">CAILculator</span>
+          </div>
+          <p>High-dimensional mathematical analysis for AI agents. Built on formally verified sedenion algebra.</p>
+          <p class="tagline">"Applied Pathological Mathematics — Better math, less suffering."</p>
+        </div>
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#foundation">Foundation</a></li>
+            <li><a href="#tools">MCP Tools</a></li>
+            <li><a href="#profiles">Domain Profiles</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#install">Installation</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Research</h4>
+          <ul>
+            <li><a href="https://doi.org/10.5281/zenodo.17402495" target="_blank">Zenodo Publication</a></li>
+            <li><a href="https://github.com/ChavezAILabs/cailculator-mcp" target="_blank">GitHub Repository</a></li>
+            <li><a href="https://github.com/ChavezAILabs/CAIL-rh-investigation" target="_blank">RH Investigation</a></li>
+            <li><a href="https://github.com/ChavezAILabs/cailculator-mcp/tree/main/lean" target="_blank">Lean Proofs</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="mailto:paul@chavezailabs.com">paul@chavezailabs.com</a></li>
+            <li><a href="https://x.com/aztecsungod" target="_blank">@aztecsungod on X</a></li>
+            <li><a href="mailto:paul@chavezailabs.com?subject=Enterprise Inquiry">Enterprise Sales</a></li>
+            <li><a href="mailto:paul@chavezailabs.com?subject=Research Collaboration">Research Collaboration</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Chavez AI Labs LLC. All rights reserved.</p>
+        <p><a href="https://github.com/ChavezAILabs/cailculator-mcp/blob/main/LICENSE">MIT License</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Tab switching
+    function switchTab(tab) {
+      document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tools-panel').forEach(p => p.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    // Pricing toggle
+    function togglePricing() {
+      const toggle = document.getElementById('pricing-toggle');
+      const gridCore = document.getElementById('grid-core');
+      const gridQuant = document.getElementById('grid-quant');
+      const labelCore = document.getElementById('label-core');
+      const labelQuant = document.getElementById('label-quant');
+      const isQuant = toggle.classList.toggle('quant-active');
+      gridCore.classList.toggle('hide', isQuant);
+      gridQuant.classList.toggle('show', isQuant);
+      labelCore.classList.toggle('active', !isQuant);
+      labelQuant.classList.toggle('active', isQuant);
+    }
+
+    // Scroll-triggered fade-in
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          observer.unobserve(e.target);
         }
-    </script>
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  </script>
 </body>
 </html>
