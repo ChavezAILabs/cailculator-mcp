@@ -37,6 +37,12 @@ CAILculator makes this "algebraic dark matter" huntable through hypothesis-drive
 
 ---
 
+## Glossary & Terminology
+
+To support rigorous cross-disciplinary collaboration, we maintain a definitive **[Project Glossary](./GLOSSARY.md)**. This document reintroduces and establishes the terminology for high-dimensional algebraic structures (Sedenions, Chingons, Voudons) and their domain projections in journalism and quantitative finance.
+
+---
+
 ## System Requirements
 
 ### Python Environment
