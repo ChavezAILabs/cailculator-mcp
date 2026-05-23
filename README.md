@@ -50,6 +50,16 @@ CAILculator makes this "algebraic dark matter" huntable through hypothesis-drive
 
 ---
 
+## API Key Acquisition
+
+CAILculator requires a valid API key for tool execution. 
+
+1.  **Visit the Portal**: Access the [CAILculator API Portal](https://cailculator-mcp-production.up.railway.app/) to review subscription tiers (Individual, Academic, Commercial, and Quantitative Finance).
+2.  **Request Access**: To obtain a key, please email **[paul@chavezailabs.com](mailto:paul@chavezailabs.com)**. Keys are typically issued within 24 hours.
+3.  **Enterprise/Research**: For custom profile development or large-scale research collaborations, please include project details in your request.
+
+---
+
 ## Installation & Setup
 
 ### 1. Install CAILculator
