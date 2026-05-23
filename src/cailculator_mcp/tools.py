@@ -97,14 +97,38 @@ TOOLS_DEFINITIONS = [
     },
     {
         "name": "illustrate",
-        "description": "Generate high-precision visualizations of patterns and transforms.",
+        "description": (
+            "Generate a visualization from any data. "
+            "Construct a plot_spec dict describing exactly what you want rendered — "
+            "chart type, axes, colors, labels, layout. The server executes and returns "
+            "the image inline. Use for any field: journalism, finance, mathematics, "
+            "research, or general data analysis. No pre-programmed chart types."
+        ),
         "inputSchema": {
             "type": "object",
             "properties": {
-                "visualization_type": {"type": "string", "enum": ["canonical_six_universality", "custom"]},
-                "data": {"type": "object"}
+                "plot_spec": {
+                    "type": "object",
+                    "description": (
+                        "Figure specification. Keys: "
+                        "figure ({figsize, dpi, facecolor}), "
+                        "axes (list of trace dicts with type/x/y/color/label/etc), "
+                        "xlabel, ylabel, title, legend, grid, spines, xlim, ylim, "
+                        "xscale, yscale, xticks, xticklabels, tick_color, annotations, "
+                        "subplots (list of sub-specs for multi-panel figures). "
+                        "Trace types: bar, line, scatter, fill, hist, pie, heatmap, axhline, axvline."
+                    )
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Plain language description of what this visualization shows. Used for logging and filename context."
+                },
+                "style_hints": {
+                    "type": "object",
+                    "description": "Optional metadata: audience, tone, theme. Not used for rendering — informational only."
+                }
             },
-            "required": ["visualization_type"]
+            "required": ["plot_spec"]
         }
     },
     {
@@ -247,28 +271,48 @@ async def zdtp_transmit(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
 async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
-        from .visualizations import plot_canonical_six_universality, save_figure
+        from . import visualizations as viz
         from pathlib import Path
         import time
+        import base64 as _b64
 
-        vis_type = arguments.get("visualization_type", "canonical_six_universality")
-        data = arguments.get("data", {})
-        
-        # Absolute Path Fix for Claude Desktop
+        plot_spec = arguments.get("plot_spec", {})
+        style_hints = arguments.get("style_hints", {})
+        description = arguments.get("description", "")
+
+        if not plot_spec:
+            return {
+                "success": False,
+                "error": "plot_spec is required. Construct a plot_spec dict describing the figure and pass it with the data."
+            }
+
+        # Absolute path fix for Claude Desktop
         current_file = Path(__file__).resolve()
         repo_root = current_file.parent.parent.parent
         assets_dir = repo_root / "assets" / "visualizations"
         assets_dir.mkdir(parents=True, exist_ok=True)
 
-        filename = f"{vis_type}_{time.strftime('%Y%m%d_%H%M%S')}.png"
+        timestamp = time.strftime('%Y%m%d_%H%M%S')
+        filename = f"custom_{timestamp}.png"
         filepath = assets_dir / filename
 
-        if vis_type == "canonical_six_universality":
-            fig = plot_canonical_six_universality(data.get("values", {}))
-            save_figure(fig, str(filepath))
-            return {"success": True, "static_path": str(filepath), "engine": "v2.0 High-Precision"}
-        
-        return {"success": False, "error": f"Visualization {vis_type} not yet ported to v2.0"}
+        fig = viz.plot_custom(plot_spec, style_hints=style_hints)
+
+        # Encode BEFORE _fig_to_base64 closes the figure
+        image_b64 = viz._fig_to_base64(fig)
+
+        with open(str(filepath), 'wb') as f:
+            f.write(_b64.b64decode(image_b64))
+
+        return {
+            "success": True,
+            "static_path": str(filepath),
+            "image": image_b64,
+            "media_type": "image/png",
+            "description": description,
+            "engine": "v2.1.0"
+        }
+
     except Exception as e:
         return {"success": False, "error": str(e)}
 
