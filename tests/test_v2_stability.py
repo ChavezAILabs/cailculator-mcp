@@ -98,6 +98,10 @@ def test_stability_constant_input_validation():
         get_stability_constant(P, Q, 0.0)
     with pytest.raises(ValueError, match="alpha must be positive"):
         get_stability_constant(P, Q, -1.0)
-    
-    # Dimension validation can be added here if we enforce strict 16/32/etc lengths in get_stability_constant
-    # Currently it takes any numpy array. Let's add dimension validation if required.
+
+def test_chavez_transform_alpha_cap_validation():
+    """Rejects alpha > 5.0 in ChavezTransform to prevent timeouts"""
+    from cailculator_mcp.core.chavez_transform import ChavezTransform
+    with pytest.raises(ValueError, match="alpha parameter is capped at 5.0"):
+        ChavezTransform(dimension=16, alpha=5.1)
+

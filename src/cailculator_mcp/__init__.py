@@ -3,7 +3,7 @@ CAILculator MCP - Production Engine v2.0.3
 Universal high-precision mathematical data analysis
 """
 
-__version__ = "2.1.1"
+__version__ = "2.1.2"
 
 from .server import MCPServer, main
 from .tools import call_tool, TOOLS_DEFINITIONS

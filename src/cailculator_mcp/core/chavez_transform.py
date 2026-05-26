@@ -38,6 +38,8 @@ class ChavezTransform:
         """
         if alpha <= 0:
             raise ValueError(f"alpha must be positive, got {alpha}")
+        if alpha > 5.0:
+            raise ValueError(f"alpha parameter is capped at 5.0 to prevent server-side timeout, got {alpha}")
 
         self.dimension = dimension
         self.alpha = alpha

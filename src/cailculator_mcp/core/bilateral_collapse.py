@@ -30,6 +30,17 @@ def verify_bilateral_collapse(P_arr: np.ndarray, Q_arr: np.ndarray, precision: f
     if len(Q_arr) != dim:
         raise ValueError(f"Dimension mismatch: P is {dim}D, Q is {len(Q_arr)}D")
         
+    # Check for non-zero scalar component (index 0) to guard against indexing discrepancy
+    warning = None
+    if dim == 16 and (abs(P_arr[0]) > 1e-15 or abs(Q_arr[0]) > 1e-15):
+        warning = (
+            "Non-zero scalar component detected at index 0 (e_0). Sedenion basis elements are "
+            "0-indexed where index 0 is the real unit e_0, and indices 1-15 are imaginary units e_1-e_15. "
+            "Zero divisors must reside entirely in the imaginary subspace (indices 1-15)."
+        )
+        import logging
+        logging.getLogger(__name__).warning(warning)
+        
     if framework == "clifford" and dim == 16:
         from .clifford_element import map_sedenion_to_clifford
         P = map_sedenion_to_clifford(P_arr, strategy=clifford_strategy)
@@ -48,7 +59,7 @@ def verify_bilateral_collapse(P_arr: np.ndarray, Q_arr: np.ndarray, precision: f
     is_zero_PQ = norm_PQ < precision
     is_zero_QP = norm_QP < precision
     
-    return {
+    result = {
         "is_bilateral_zero_divisor": bool(is_zero_PQ and is_zero_QP),
         "PQ_norm": float(norm_PQ),
         "QP_norm": float(norm_QP),
@@ -57,3 +68,6 @@ def verify_bilateral_collapse(P_arr: np.ndarray, Q_arr: np.ndarray, precision: f
         "dimension": dim,
         "precision": precision
     }
+    if warning:
+        result["warning"] = warning
+    return result

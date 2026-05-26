@@ -58,6 +58,25 @@ def test_stability_bound_holds_across_alpha_regime():
         # Verify internal core flag also agrees
         assert result["stability_bound"]["satisfied"]
 
+def test_verify_bilateral_oracle_indexing_warning():
+    """Verify that verify_bilateral_collapse outputs a warning if index 0 is non-zero."""
+    from cailculator_mcp.core.bilateral_collapse import verify_bilateral_collapse
+    # Create P and Q with a non-zero index 0 (real unit e_0)
+    P = np.zeros(16)
+    P[0] = 1.0  # Non-zero scalar part
+    P[13] = 1.0
+    
+    Q = np.zeros(16)
+    Q[2] = 1.0
+    Q[11] = 1.0
+    
+    result = verify_bilateral_collapse(P, Q)
+    assert not result["is_bilateral_zero_divisor"]
+    assert "warning" in result
+    assert "Non-zero scalar component detected at index 0" in result["warning"]
+
 if __name__ == "__main__":
-    # If run directly, execute the test
+    # If run directly, execute the tests
     test_stability_bound_holds_across_alpha_regime()
+    test_verify_bilateral_oracle_indexing_warning()
+

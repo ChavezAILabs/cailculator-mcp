@@ -7,8 +7,8 @@
         "cailculator_mcp.server"
       ],
       "env": {
-        "CAILCULATOR_API_KEY": "dev_test_key",
-        "CAILCULATOR_ENABLE_DEV_MODE": "true"
+        "CAILCULATOR_API_KEY": "cail_l0r6ZFNeDckQtNa2H0Mjc7-zoPq_b3aMX12BwjrQNwY",
+        "CAILCULATOR_ENABLE_OFFLINE_FALLBACK": "true"
       }
     }
   }
