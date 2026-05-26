@@ -123,7 +123,7 @@ To leverage larger context windows, run the server locally over HTTP:
 
 ## Specialized Profiles
 
-The **Profile Manager** परियोजनाओं projects universal algebraic patterns into domain-specific intelligence:
+The **Profile Manager** projects universal algebraic patterns into domain-specific intelligence:
 
 *   **Journalism Profile**: Detects structural "Tipping Points" and data inconsistencies for investigative reporting.
 *   **Quant Equity Profile**: Benchmarks market regime transitions using Chavez Transform stability measures.
