@@ -14,7 +14,7 @@
 
 CAILculator is a Model Context Protocol (MCP) server that empowers AI agents to analyze and compute within high-dimensional algebraic spaces (16D Sedenions to 256D Voudons). It provides a ground-truth mathematical engine for representation learning, sequence detection, and regime analysis, anchored by the **Lean 4 formally verified** Chavez Transform and the Zero Divisor Transmission Protocol (ZDTP).
 
-## Operational Status: Formally Verified (v2.1.1)
+## Operational Status: Formally Verified (v2.1.2)
 
 The core mathematical foundation of CAILculator is **formally verified** in Lean 4. Every calculation meets a **$10^{-15}$ machine precision** standard, ensuring that structural claims are backed by rigorous proof rather than numerical approximation.
 
