@@ -88,7 +88,7 @@ TOOLS_DEFINITIONS = [
             "type": "object",
             "properties": {
                 "input_16d": {"type": "array", "items": {"type": "number"}, "minItems": 16, "maxItems": 16},
-                "gateway": {"type": ["string", "integer"], "description": "S1-S6, 1-6, or 'all'"},
+                "gateway": {"type": ["string", "integer"], "description": "S1, S2, S3A, S3B, S4, S5, 1-6, or 'all'"},
                 "restrict_to_pattern": {"type": "integer", "minimum": 1, "maximum": 6, "description": "Explicit pattern ID (1-6) to use as gateway. Overrides 'gateway' if provided."},
                 "profile": {"type": "string", "default": "general_data"}
             },
@@ -256,10 +256,8 @@ async def zdtp_transmit(arguments: Dict[str, Any]) -> Dict[str, Any]:
         elif isinstance(gateway, int):
             pid = gateway
         elif isinstance(gateway, str):
-            # S1-S6 mapping
             pid_map = {
-                "S1": 1, "S2": 2, "S3": 3, "S4": 4, "S5": 5, "S6": 6,
-                "S3A": 3, "S3B": 4 # Backward compatibility
+                "S1": 1, "S2": 2, "S3A": 3, "S3B": 4, "S4": 5, "S5": 6
             }
             pid = pid_map.get(gateway.upper(), 1)
             

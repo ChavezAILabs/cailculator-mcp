@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Zero Divisor Transmission Protocol is the structural transmission layer of CAILculator. It lifts a 16-dimensional sedenion state into 256-dimensional space — preserving the original state throughout — then measures how consistently the data's structure propagates across six independent algebraic pathways.
+The Zero Divisor Transmission Protocol is the structural transmission layer of CAILculator. It lifts a 16-dimensional sedenion state into 256-dimensional space — preserving the original state throughout — then measures how consistently the data's structure propagates across six algebraic transmission pathways.
 
 ZDTP answers a specific research question: **does this data carry structure that is stable across the full Cayley-Dickson algebraic geometry, or does it align preferentially with some algebraic channels and not others?** The answer is expressed as a single convergence score between 0 and 1, backed by formally verified algebra.
 
@@ -44,14 +44,14 @@ $$P \times Q = 0 \quad \text{and} \quad Q \times P = 0$$
 
 with $P \neq 0$ and $Q \neq 0$. The Canonical Six are:
 
-| Gateway | P | Q | Character |
-|---------|---|---|-----------|
-| S1 | $e_1 + e_{14}$ | $e_3 + e_{12}$ | Master Gateway |
-| S2 | $e_3 + e_{12}$ | $e_5 + e_{10}$ | Multi-Modal |
-| S3A | $e_4 + e_{11}$ | $e_6 + e_9$ | Discontinuous |
-| S3B | $e_1 - e_{14}$ | $e_3 - e_{12}$ | Conjugate Pair |
-| S4 | $e_1 - e_{14}$ | $e_5 + e_{10}$ | Linear |
-| S5 | $e_2 - e_{13}$ | $e_6 + e_9$ | Transformation |
+| Gateway | P | Q | Properties |
+|---------|---|---|------------|
+| S1 | $e_1 + e_{14}$ | $e_3 + e_{12}$ | Cayley-Dickson bilateral; Clifford-asymmetric (‖QP‖ = 2√2, dimension-invariant); antipodal partner of S4 (Lean 4-proved); Class B |
+| S2 | $e_3 + e_{12}$ | $e_5 + e_{10}$ | Universal Bilateral Anchor — bilateral in both Cayley-Dickson and Clifford frameworks (16D–256D); Class A |
+| S3A | $e_4 + e_{11}$ | $e_6 + e_9$ | Cayley-Dickson bilateral; same Fano origin as S3B (sign-distinguished); K_Z kernel-degenerate with S3B; Class A |
+| S3B | $e_1 - e_{14}$ | $e_3 - e_{12}$ | Cayley-Dickson bilateral; same Fano origin as S3A (sign-distinguished); K_Z kernel-degenerate with S3A; magnitude-equal to S4 universally; Class B |
+| S4 | $e_1 - e_{14}$ | $e_5 + e_{10}$ | Cayley-Dickson bilateral; antipodal partner of S1 (Lean 4-proved); magnitude-equal to S3B universally; K_Z kernel-degenerate with S5; Class B |
+| S5 | $e_2 - e_{13}$ | $e_6 + e_9$ | Cayley-Dickson bilateral; K_Z kernel-degenerate with S4; Class A |
 
 ### Why These Six
 
@@ -61,7 +61,7 @@ The Canonical Six are not an arbitrary selection from the 84 bilateral zero divi
 
 2. **Single Weyl orbit**: The six gateways form a single 24-element Weyl orbit family under the dominant E8 symmetry group — they are algebraically equivalent under the symmetry of the lattice.
 
-3. **Framework independence**: The bilateral annihilation property holds identically across both Cayley-Dickson and Clifford (Geometric) algebraic representations, and persists across dimensional doublings from 16D through 256D. These patterns are not artifacts of a particular algebraic convention.
+3. **Cross-framework presence**: Zero divisor structure persists across both Cayley-Dickson and Clifford (Geometric) algebraic representations. S2 is fully bilateral (PQ=0 ∧ QP=0) in both frameworks across 16D–256D. The remaining five are bilateral in Cayley-Dickson and unilateral in Clifford (PQ=0, QP≠0 — e.g. S1 produces ‖QP‖ = 2√2). This persistence across frameworks and dimensional doublings confirms these patterns are not artifacts of a particular algebraic convention.
 
 These three properties are the empirical discovery that initiated the research program, published at [DOI 10.5281/zenodo.17402495](https://doi.org/10.5281/zenodo.17402495).
 
@@ -109,9 +109,11 @@ This check runs at $10^{-15}$ floating-point precision. It is not a Lean call �
 
 ### The Full Cascade
 
-A single gateway transmission produces one 256D state. The **full ZDTP cascade** runs the same 16D input through all six gateways independently and collects six 256D output magnitudes:
+A single gateway transmission produces one 256D state. The **full ZDTP cascade** runs the same 16D input through all six gateways and collects six 256D output magnitudes:
 
-$$\{m_1, m_2, m_3, m_4, m_5, m_6\} = \{\|\text{output}_{S1}\|, \|\text{output}_{S2}\|, \ldots, \|\text{output}_{S5}\|\}$$
+$$\{m_{S1}, m_{S2}, m_{S3A}, m_{S3B}, m_{S4}, m_{S5}\} = \{\|\text{output}_{S1}\|, \|\text{output}_{S2}\|, \|\text{output}_{S3A}\|, \|\text{output}_{S3B}\|, \|\text{output}_{S4}\|, \|\text{output}_{S5}\|\}$$
+
+The six gateways have three independent K_Z bilateral kernel components: S3A and S3B are kernel-degenerate (same Fano intersection pair, sign-distinguished), as are S4 and S5. All six transmissions are run because the convergence score operates on 256D magnitudes — which reflect the full structural response of each pathway, not kernel values alone.
 
 ### The Convergence Score
 

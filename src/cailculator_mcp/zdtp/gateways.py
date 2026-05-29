@@ -1,9 +1,6 @@
 """
 ZDTP Gateways - CAILculator v2.0 Staging
 Structural Pathway Definitions grounded in Verified Core
-
-Refactored to remove heuristic descriptions. 
-Semantic labels are now managed by domain Profiles.
 """
 
 from typing import Dict, Any, Tuple
@@ -22,10 +19,7 @@ def get_gateway_pair(pattern_id: int, dimension: int = 32) -> Tuple[np.ndarray, 
     return six[pattern_id]
 
 def get_structural_info(pattern_id: int) -> Dict[str, Any]:
-    """
-    Returns purely structural information about the gateway.
-    No heuristic names (e.g. 'Master') are included here.
-    """
+    """Returns structural information about the gateway."""
     meta = get_pattern_metadata(pattern_id)
     return {
         "id": pattern_id,

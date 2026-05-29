@@ -30,14 +30,14 @@ These are **bilateral zero divisors**: neither $P$ nor $Q$ is zero, yet their pr
 
 CAILculator's Chavez Transform uses a specific set of six bilateral zero divisor pairs, formally verified in Lean 4 to lie on the E8 first shell and form a single Weyl orbit family:
 
-| Gateway | Identity | Character |
-|---------|----------|-----------|
-| S1 | $(e_1 + e_{14}) \times (e_3 + e_{12}) = 0$ | Master Gateway |
-| S2 | $(e_3 + e_{12}) \times (e_5 + e_{10}) = 0$ | Multi-Modal |
-| S3A | $(e_4 + e_{11}) \times (e_6 + e_9) = 0$ | Discontinuous |
-| S3B | $(e_1 - e_{14}) \times (e_3 - e_{12}) = 0$ | Conjugate Pair |
-| S4 | $(e_1 - e_{14}) \times (e_5 + e_{10}) = 0$ | Linear |
-| S5 | $(e_2 - e_{13}) \times (e_6 + e_9) = 0$ | Transformation |
+| Gateway | Identity | Properties |
+|---------|----------|------------|
+| S1 | $(e_1 + e_{14}) \times (e_3 + e_{12}) = 0$ | Cayley-Dickson bilateral; Clifford-asymmetric (‖QP‖ = 2√2, dimension-invariant); antipodal partner of S4 (Weyl reflection sα₄, Lean 4-proved); Class B |
+| S2 | $(e_3 + e_{12}) \times (e_5 + e_{10}) = 0$ | Universal Bilateral Anchor — bilateral in both Cayley-Dickson and Clifford frameworks (16D–256D); Class A |
+| S3A | $(e_4 + e_{11}) \times (e_6 + e_9) = 0$ | Cayley-Dickson bilateral; same Fano origin as S3B (sign-distinguished); K_Z kernel-degenerate with S3B; Class A |
+| S3B | $(e_1 - e_{14}) \times (e_3 - e_{12}) = 0$ | Cayley-Dickson bilateral; same Fano origin as S3A (sign-distinguished); K_Z kernel-degenerate with S3A; magnitude-equal to S4 universally; Class B |
+| S4 | $(e_1 - e_{14}) \times (e_5 + e_{10}) = 0$ | Cayley-Dickson bilateral; antipodal partner of S1 (Lean 4-proved); magnitude-equal to S3B universally; K_Z kernel-degenerate with S5; Class B |
+| S5 | $(e_2 - e_{13}) \times (e_6 + e_9) = 0$ | Cayley-Dickson bilateral; K_Z kernel-degenerate with S4; Class A |
 
 These are not chosen arbitrarily. Their membership in the E8 Weyl orbit means they carry the symmetry structure of the most exceptional lattice in mathematics — a property that persists across Cayley-Dickson doublings from 16D through 256D and holds identically in both Cayley-Dickson and Clifford algebraic representations.
 

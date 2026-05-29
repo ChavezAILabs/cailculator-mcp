@@ -128,15 +128,17 @@ class ZDTPTransmission:
         magnitudes = []
         
         # In v2.0, we can expand to the full 24 families
+        _GATEWAY_NAMES = {1: "S1", 2: "S2", 3: "S3A", 4: "S3B", 5: "S4", 6: "S5"}
         pattern_range = range(1, 7) # Default to Canonical Six
-        
+
         for pid in pattern_range:
+            gname = _GATEWAY_NAMES[pid]
             try:
                 res = self.transmit(input_16d, pid, profile_name)
-                results[f"S{pid}"] = res
+                results[gname] = res
                 magnitudes.append(res["magnitude_256d"])
             except Exception as e:
-                logger.error(f"Cascade failure at S{pid}: {e}")
+                logger.error(f"Cascade failure at {gname}: {e}")
 
         # Compute v2.0 Convergence Score
         convergence = self._compute_convergence_v2(magnitudes)
