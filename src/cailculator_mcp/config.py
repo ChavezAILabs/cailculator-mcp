@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     # Development/testing flags
     enable_dev_mode: bool = False
-    enable_offline_fallback: bool = True  # Fallback if auth server unreachable
+    enable_offline_fallback: bool = False  # Fail closed by default; set True for local dev
 
     # Logging
     log_level: str = "INFO"
