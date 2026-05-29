@@ -83,7 +83,15 @@ CAILculator makes this "algebraic dark matter" huntable through hypothesis-drive
 
 ---
 
-## System Requirements
+## Deep-Dive Documentation
+
+Extended theoretical frameworks and protocol specifications for researchers:
+
+- **[Chavez Transform Explainer](./docs/chavez_transform.md)**: The historical context, zero divisor kernel mechanism, stability bound, scalar channel theorem, formal verification chain, and research applications across RHI, finance, and journalism.
+- **[ZDTP Protocol Specification](./docs/zdtp_protocol.md)**: The Zero Divisor Transmission Protocol in full — Cayley-Dickson tower mechanics, four-factor interaction, recursive 16D→256D expansion, convergence scoring, and the Lean-to-runtime verification pipeline.
+- **[Project Glossary](./GLOSSARY.md)**: Definitive terminology for high-dimensional algebraic structures (Sedenions, Chingons, Voudons) and their domain projections in journalism and quantitative finance.
+
+---
 
 ### Python Environment
 - **Required:** Python 3.10, 3.11, 3.12, or 3.13 (64-bit).
