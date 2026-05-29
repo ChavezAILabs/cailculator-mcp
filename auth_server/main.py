@@ -53,10 +53,11 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 # Stripe Price IDs (LIVE MODE - Production)
 STRIPE_PRICES = {
-    "individual": "price_1SNlPU2NNm10BnLC1ufwG07s",    # $79.99/month - 25,000 requests
-    "academic": "price_1SNlQz2NNm10BnLC3wFUtekN",      # $199/month - 75,000 requests
-    "commercial": "price_1SNlUg2NNm10BnLCy2NhebOI",    # $299/month per seat - 250,000 requests
-    # Quant Trader Tiers (BETA)
+    "individual": "price_1SNlPU2NNm10BnLC1ufwG07s",    # $50/month - 25,000 requests
+    "journalist": "manual",                           # $75/month - 50,000 requests (NEW)
+    "academic": "price_1SNlQz2NNm10BnLC3wFUtekN",      # $100/month - 75,000 requests
+    "commercial": "price_1SNlUg2NNm10BnLCy2NhebOI",    # $250/month per seat - 250,000 requests
+    # Quant Trader Tiers
     "quant_explorer": "price_1SQGie2NNm10BnLCyraRcDSA",      # $599/month - 100,000 requests
     "quant_professional": "price_1SXDc82NNm10BnLC36hwqnaA",  # $1,499/month - 500,000 requests
     "quant_elite": "price_1SQGox2NNm10BnLCcROJSo91"          # $3,499/month - Unlimited
@@ -66,10 +67,11 @@ STRIPE_PRICES = {
 # Monthly request limits by tier
 TIER_LIMITS = {
     "individual": 25000,
+    "journalist": 50000,
     "academic": 75000,
     "commercial": 250000,
     "enterprise": 999999999,  # Unlimited (or very high limit)
-    # Quant Trader Tiers (BETA)
+    # Quant Trader Tiers
     "quant_explorer": 100000,
     "quant_professional": 500000,
     "quant_elite": -1  # Unlimited

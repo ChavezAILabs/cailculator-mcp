@@ -1,5 +1,5 @@
 """
-CAILculator MCP - Production Engine v2.0.3
+CAILculator MCP - Production Engine v2.1.2
 Universal high-precision mathematical data analysis
 """
 
