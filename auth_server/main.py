@@ -137,21 +137,6 @@ class UsageRequest(BaseModel):
     dimension: Optional[int] = None
 
 # =============================================================================
-# SUBSCRIPTION LIMITS
-# =============================================================================
-
-TIER_LIMITS = {
-    "individual": 25_000,       # $79.99/month - 25,000 requests
-    "academic": 75_000,         # $199/month - 75,000 requests
-    "commercial": 250_000,      # $299/month per seat - 250,000 requests
-    "enterprise": -1,           # Custom pricing - Unlimited
-    # Quant Trader Tiers (BETA)
-    "quant_explorer": 100_000,      # $599/month - 100,000 requests
-    "quant_professional": 500_000,  # $1,499/month - 500,000 requests
-    "quant_elite": -1               # $3,499/month - Unlimited
-}
-
-# =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
 
@@ -278,93 +263,6 @@ def send_verification_email(email: str, verification_token: str, base_url: str) 
         print(f"Failed to send email to {email}: {str(e)}")
         return False
 
-def send_api_key_email(email: str, api_key: str, tier: str) -> bool:
-    """
-    Send API key to user after paid subscription or manual approval
-    Returns True if successful, False otherwise
-    """
-    if not SENDGRID_API_KEY:
-        print("WARNING: SENDGRID_API_KEY not set, skipping email")
-        return False
-
-    tier_info = {
-        "individual": {"limit": "25,000 requests/month", "price": "$79.99/month"},
-        "academic": {"limit": "75,000 requests/month", "price": "$199/month"},
-        "commercial": {"limit": "250,000 requests/month per seat", "price": "$299/month per seat"},
-        "enterprise": {"limit": "Unlimited", "price": "Custom pricing"},
-        # Quant Trader Tiers (BETA)
-        "quant_explorer": {"limit": "100,000 requests/month", "price": "$599/month"},
-        "quant_professional": {"limit": "500,000 requests/month", "price": "$1,499/month"},
-        "quant_elite": {"limit": "Unlimited requests", "price": "$3,499/month"}
-    }
-
-    tier_details = tier_info.get(tier, {"limit": "Unknown", "price": "Unknown"})
-
-    message = Mail(
-        from_email=SENDGRID_FROM_EMAIL,
-        to_emails=email,
-        subject="Your CAILculator MCP API Key",
-        html_content=f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #667eea;">CAILculator MCP</h1>
-                    <p style="color: #666; font-style: italic;">"Better math, less suffering"</p>
-                </div>
-
-                <h2>Your API Key is Ready!</h2>
-
-                <p>Welcome to CAILculator MCP! Your account has been approved and your API key is ready to use.</p>
-
-                <div style="background-color: #f7fafc; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;">
-                    <p style="margin: 0; font-weight: bold; color: #667eea;">Your Subscription Details:</p>
-                    <p style="margin: 5px 0;"><strong>Tier:</strong> {tier.capitalize()}</p>
-                    <p style="margin: 5px 0;"><strong>Price:</strong> {tier_details['price']}</p>
-                    <p style="margin: 5px 0;"><strong>Usage Limit:</strong> {tier_details['limit']}</p>
-                </div>
-
-                <div style="background-color: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 5px; margin: 20px 0; font-family: monospace; word-break: break-all;">
-                    <p style="margin: 0; font-size: 0.9em;"><strong>API Key:</strong></p>
-                    <p style="margin: 5px 0; font-size: 1em;">{api_key}</p>
-                </div>
-
-                <div style="background-color: #fff5f5; border-left: 4px solid #f56565; padding: 15px; margin: 20px 0;">
-                    <p style="margin: 0; color: #c53030;"><strong>⚠️ Important:</strong> Keep this API key secure! It's like a password for your account.</p>
-                </div>
-
-                <h3>Getting Started</h3>
-                <ol style="line-height: 1.8;">
-                    <li>Copy your API key above</li>
-                    <li>Add it to your Claude Desktop configuration</li>
-                    <li>Restart Claude Desktop</li>
-                    <li>Start exploring zero divisors in high-dimensional algebras!</li>
-                </ol>
-
-                <p>For setup instructions and documentation, visit: <a href="https://github.com/pchavez2029/CAILculator" style="color: #667eea;">github.com/pchavez2029/CAILculator</a></p>
-
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-
-                <p style="color: #999; font-size: 0.85em; text-align: center;">
-                    <strong>Chavez AI Labs</strong><br>
-                    Research tools for high-dimensional mathematics<br>
-                    Questions? Reply to this email or contact <a href="mailto:iknowpi@gmail.com" style="color: #667eea;">iknowpi@gmail.com</a>
-                </p>
-            </div>
-        </body>
-        </html>
-        """
-    )
-
-    try:
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
-        print(f"API key email sent to {email}: Status {response.status_code}")
-        return response.status_code in [200, 202]
-    except Exception as e:
-        print(f"Failed to send API key email to {email}: {str(e)}")
-        return False
-
 def send_manual_approval_pending_email(email: str, country_code: str) -> bool:
     """
     Notify user that their signup requires manual approval
@@ -474,12 +372,13 @@ def send_api_key_email(email: str, api_key: str, tier: str, customer_name: str =
     # Friendly tier names
     tier_names = {
         "individual": "Individual",
+        "journalist": "Journalist",
         "academic": "Academic",
         "commercial": "Commercial",
         "enterprise": "Enterprise",
-        "quant_explorer": "Quant Explorer (BETA)",
-        "quant_professional": "Quant Professional (BETA)",
-        "quant_elite": "Quant Elite (BETA)"
+        "quant_explorer": "Quant Explorer",
+        "quant_professional": "Quant Professional",
+        "quant_elite": "Quant Elite"
     }
     tier_display = tier_names.get(tier, tier.replace('_', ' ').title())
 
@@ -517,7 +416,7 @@ To get started:
 
 4. Restart Claude Desktop
 
-Documentation: https://github.com/pchavez2029/CAILculator
+Documentation: https://github.com/ChavezAILabs/cailculator-mcp
 Support: iknowpi@gmail.com
 
 Features included in your {tier_display} plan:
@@ -601,6 +500,7 @@ async def migrate_database(db: Session = Depends(get_db)):
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS period_end_date TIMESTAMP",
         # Add new enum values to PostgreSQL enum type
         "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'individual'",
+        "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'journalist'",
         "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'commercial'",
         # Update old enum values to new ones (cast to text for comparison)
         "UPDATE users SET tier = 'individual' WHERE tier::text = 'free'",
@@ -1085,12 +985,12 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                 print(f"   Subscription ID: {subscription_id}")
                 print(f"   Price ID: {price_id}")
 
-                # Map your live price IDs to tiers
+                # Map live Stripe price IDs to tiers
                 price_to_tier = {
-                    "price_1SNlPU2NNm10BnLC1ufwG07s": "individual",   # $79.99/month
-                    "price_1SNlQz2NNm10BnLC3wFUtekN": "academic",     # $199/month
-                    "price_1SNlUg2NNm10BnLCy2NhebOI": "commercial",   # $299/month
-                    # Quant Trader Tiers (BETA)
+                    "price_1SNlPU2NNm10BnLC1ufwG07s": "individual",   # $50/month
+                    # "TODO_JOURNALIST_PRICE_ID": "journalist",        # $75/month - add once created in Stripe
+                    "price_1SNlQz2NNm10BnLC3wFUtekN": "academic",     # $100/month
+                    "price_1SNlUg2NNm10BnLCy2NhebOI": "commercial",   # $250/month
                     "price_1SQGie2NNm10BnLCyraRcDSA": "quant_explorer",      # $599/month
                     "price_1SXDc82NNm10BnLC36hwqnaA": "quant_professional",  # $1,499/month
                     "price_1SQGox2NNm10BnLCcROJSo91": "quant_elite"          # $3,499/month

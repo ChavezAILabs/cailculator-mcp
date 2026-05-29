@@ -32,10 +32,10 @@ Base = declarative_base()
 
 class SubscriptionTier(str, Enum):
     INDIVIDUAL = "individual"
+    JOURNALIST = "journalist"
     ACADEMIC = "academic"
     COMMERCIAL = "commercial"
     ENTERPRISE = "enterprise"
-    # Quant Trader Tiers (BETA)
     QUANT_EXPLORER = "quant_explorer"
     QUANT_PROFESSIONAL = "quant_professional"
     QUANT_ELITE = "quant_elite"
