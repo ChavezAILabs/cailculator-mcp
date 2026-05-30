@@ -22,11 +22,11 @@ Rather than treating zero divisors as algebraic anomalies to be avoided, the Cha
 
 ## The Zero Divisor Transmission Protocol (ZDTP)
 
-ZDTP is the structural transmission layer of CAILculator. It lifts a 16D sedenion state into 256D space, then measures how consistently the data's structure propagates across six independent algebraic pathways.
+ZDTP is the structural transmission layer of CAILculator. It lifts a 16D sedenion state into 256D space, then measures how consistently the data's structure propagates across six algebraic transmission pathways. The six gateways have three independent K_Z kernel components — S3A and S3B share a Fano intersection origin, as do S4 and S5 — but all six are run independently in transmission, and the convergence score reflects the full spread of their output magnitudes.
 
 ### Transmission Mechanics
 
-Each of the six Canonical Gateway Pairs is a verified bilateral zero divisor: two sedenion elements $P$ and $Q$ satisfying both $PQ = 0$ and $QP = 0$. Before any transmission begins, the oracle reconfirms this property numerically at $10^{-15}$ precision.
+Each of the six Canonical Gateway Pairs is a verified bilateral zero divisor in the Cayley-Dickson algebra: two sedenion elements $P$ and $Q$ satisfying both $PQ = 0$ and $QP = 0$. S2 additionally holds bilateral status across both Cayley-Dickson and Clifford frameworks at 16D–256D — the only gateway to do so. Before any transmission begins, the oracle reconfirms this property numerically at $10^{-15}$ precision.
 
 The transmission step is the four-factor interaction sum:
 
@@ -67,7 +67,7 @@ The core mathematical foundation of CAILculator is **formally verified** in Lean
 - **[BilateralCollapse.lean](./lean/BilateralCollapse.lean)**: Proves the bilateral zero divisor identity ($PQ=0 \land QP=0$) used to gate all v2.0+ transmissions.
 - **[ChavezTransform_genuine.lean](./lean/ChavezTransform_genuine.lean)**: Establishes the stability constant $M$, guaranteeing transform outputs never exceed theoretical bounds ($|C[f]| \leq M \cdot \|f\|_1$).
 - **Dual Algebraic Frameworks**: Native support for both non-associative **Cayley-Dickson** and associative **Clifford (Geometric)** algebras.
-- **Zero Sorry**: Aristotle (Harmonic Math's independent Lean 4 verification engine) independently verifies all proofs with zero `sorry` stubs — meaning no unproven axiom placeholders anywhere in the proof chain.
+- **Axiom-Clean Core**: Aristotle (Harmonic Math's independent Lean 4 verification engine) independently verifies the proof stack. The core theorems carry axiom footprint `[propext, Classical.choice, Quot.sound]` — standard Lean foundations only. One named non-standard axiom, `riemann_critical_line`, precisely identifies the open mathematical boundary of the Riemann Hypothesis investigation. One intentional boundary `sorry` in the spectral containment proof is explicitly scoped and documented. The proof architecture is fully auditable: every non-standard assumption is named and locatable.
 
 ---
 
