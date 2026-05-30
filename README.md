@@ -179,10 +179,12 @@ The **Profile Manager** projects universal algebraic patterns into domain-specif
 
 ## Available Tools
 
+CAILculator computes natively across two fundamentally different algebraic frameworks — non-associative **Cayley-Dickson** and associative **Clifford (Geometric)** — at dimensions from 16D to 256D. This is a rare capability: most mathematical software commits to one framework. Running the same structural computation in both and comparing results is how CAILculator discovered that S2 is the only Canonical Six gateway bilateral in both frameworks — a finding invisible from inside either framework alone.
+
 ### High-Precision Research
 - **`chavez_transform`**: Apply the verified integral transform to identify hidden structures in numerical data.
 - **`detect_patterns`**: Multi-stage pipeline identifying linear, geometric, Fibonacci, and complex symmetry patterns.
-- **`verify_bilateral_oracle`**: High-precision check ($10^{-15}$) for zero divisor pairs across both Cayley-Dickson and Clifford frameworks.
+- **`verify_bilateral_oracle`**: High-precision bilateral zero divisor check ($10^{-15}$) run independently in both Cayley-Dickson and Clifford frameworks. Results can agree or diverge — the divergence is the finding. This is the tool that confirmed S2 as the only Canonical Six gateway bilateral in both.
 - **`map_e8_orbit`**: Project high-dimensional vectors onto verified E8 Weyl orbits.
 - **`compute_high_dimensional`**: Direct sedenion algebra operations (multiply, add, conjugate, norm, zero divisor classification) extended into 32D–256D spaces.
 
