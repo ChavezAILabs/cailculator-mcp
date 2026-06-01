@@ -310,13 +310,12 @@ class MCPServer:
     async def run(self):
         """
         Main server loop - read from stdin, write to stdout.
-        
+
         MCP protocol uses stdio for communication.
         """
         logger.info("CAILculator MCP Server starting...")
-        logger.info(f"Dev mode: {self.settings.enable_dev_mode}")
-        logger.info(f"Auth endpoint: {self.settings.auth_endpoint}")
-        
+        # Settings are loaded lazily on first tool call to keep startup fast
+
         while True:
             try:
                 # Read line from stdin
