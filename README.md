@@ -189,11 +189,12 @@ CAILculator computes natively across two fundamentally different algebraic frame
 - **`compute_high_dimensional`**: Direct sedenion algebra operations (multiply, add, conjugate, norm, zero divisor classification) extended into 32D–256D spaces.
 
 ### Analysis & Visualization
+- **`analyze_dataset`**: Full structural analysis pipeline in a single call — Chavez Transform stability scoring, pattern detection, and ZDTP full cascade across all six Canonical gateways to 256D. Returns regime classification (STABLE/TRANSITIONING/SHIFTING), convergence score, per-gateway magnitudes with domain labels, and top structural patterns. Accepts a close-price list or OHLCV dict. Minimum 16 data points.
 - **`zdtp_transmit`**: Transmit 16D data through six verified mathematical gateways (S1, S2, S3A, S3B, S4, S5) into 256D spaces.
 - **`illustrate`**: Generate mathematical visualizations (bar charts, heatmaps, multi-panel plots) saved as high-fidelity PNG files.
 - **`get_version`**: Verify engine status and formal verification metadata.
 
-> **Financial tools** (`regime_detection`, `load_market_data`, `batch_analyze_market`) are implemented as standalone modules and will be wired into a future release.
+> **Additional financial tools** (`regime_detection`, `load_market_data`, `batch_analyze_market`) are implemented as standalone modules and will be wired into a future release.
 
 ---
 

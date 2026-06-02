@@ -125,6 +125,43 @@ TOOLS_DEFINITIONS = [
         }
     },
     {
+        "name": "analyze_dataset",
+        "description": (
+            "Full structural analysis pipeline for financial or numerical data. "
+            "Runs three layers in one call: Chavez Transform (stability scoring), "
+            "pattern detection (linear/geometric/Fibonacci/symmetry), and ZDTP full cascade "
+            "(structural regime health via all six Canonical gateways to 256D). "
+            "Returns regime classification (STABLE/TRANSITIONING/SHIFTING), top patterns, "
+            "per-gateway magnitudes with domain labels, and a convergence score. "
+            "Accepts a close-price list or an OHLCV dict. Minimum 16 data points. "
+            "Default profile: quant_equity."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": (
+                        "Price series: either a list of numbers (treated as close prices) "
+                        "or an object with a 'close' key (and optionally 'open','high','low','volume'). "
+                        "Minimum 16 points."
+                    )
+                },
+                "profile": {
+                    "type": "string",
+                    "default": "quant_equity",
+                    "description": "Domain profile for terminology and gateway labels."
+                },
+                "terminology_level": {
+                    "type": "string",
+                    "enum": ["technical", "standard", "simple"],
+                    "default": "standard",
+                    "description": "Output terminology level."
+                }
+            },
+            "required": ["data"]
+        }
+    },
+    {
         "name": "compute_high_dimensional",
         "description": (
             "Cayley-Dickson algebra operations on hypercomplex elements from 16D (sedenions) to 256D. "
@@ -186,6 +223,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         return await zdtp_transmit(arguments)
     elif name == "illustrate":
         return await illustrate(arguments)
+    elif name == "analyze_dataset":
+        return await analyze_dataset(arguments)
     elif name == "compute_high_dimensional":
         return await compute_high_dimensional(arguments)
     elif name == "get_version":
@@ -354,6 +393,132 @@ async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+async def analyze_dataset(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        import numpy as np
+        from .core.chavez_transform import ChavezTransform
+        from .core.canonical_six import get_canonical_six
+        from .patterns import PatternDetector
+        from .zdtp.protocol import get_zdtp_v2
+        from .profiles.manager import ProfileManager
+        from . import __version__
+
+        raw = arguments.get("data")
+        profile_name = arguments.get("profile", "quant_equity")
+        level = arguments.get("terminology_level", "standard")
+
+        if raw is None:
+            return {"success": False, "error": "data is required"}
+
+        # Accept list of numbers (close prices) or OHLCV dict
+        if isinstance(raw, list):
+            close = np.array(raw, dtype=float)
+        elif isinstance(raw, dict):
+            close_key = next((k for k in ("close", "Close", "price", "Price") if k in raw), None)
+            if not close_key:
+                return {"success": False, "error": "data dict must contain a 'close' key"}
+            close = np.array(raw[close_key], dtype=float)
+        else:
+            return {"success": False, "error": "data must be a list of numbers or a dict with a 'close' key"}
+
+        if len(close) < 16:
+            return {"success": False, "error": f"Minimum 16 data points required, got {len(close)}"}
+
+        # --- Layer 1: Pattern detection ---
+        detector = PatternDetector(alpha=1.0)
+        patterns = detector.detect_all_patterns(close)
+
+        # --- Layer 2: Chavez Transform (S2 as structural anchor) ---
+        ct = ChavezTransform(dimension=32, alpha=1.0)
+        P_arr, Q_arr = get_canonical_six(32)[2]  # pid 2 = S2, Universal Bilateral Anchor
+        indices = np.linspace(-5, 5, len(close))
+        def f(x):
+            x_s = float(x[0]) if hasattr(x, '__len__') and len(x) > 0 else float(x)
+            return float(np.sum(close * np.exp(-((x_s - indices) ** 2))))
+        ct_result = ct.transform_1d(f, P_arr, Q_arr, 2)
+
+        # --- Layer 3: ZDTP full cascade ---
+        # Build 16D input: last 15 close values normalized to e1-e15 (Option A: e0=0)
+        window = close[-15:].copy()
+        if window[0] != 0:
+            window = window / window[0]  # relative to oldest bar in window
+        input_16d = [0.0] + list(window)
+
+        zdtp = get_zdtp_v2()
+        cascade = zdtp.full_cascade(input_16d, profile_name=profile_name)
+        convergence = cascade.get("convergence", {})
+        conv_score = float(convergence.get("score", 0.0))
+        stability_level = convergence.get("stability_level", "UNKNOWN")
+
+        # --- Regime classification from convergence ---
+        if conv_score >= 0.8:
+            regime = "stable"
+        elif conv_score >= 0.5:
+            regime = "transitioning"
+        else:
+            regime = "shifting"
+
+        # --- Per-gateway breakdown ---
+        gateways_raw = cascade.get("gateways", {})
+        gateway_breakdown = {}
+        for gw in ("S1", "S2", "S3A", "S3B", "S4", "S5"):
+            gw_data = gateways_raw.get(gw, {})
+            gateway_breakdown[gw] = {
+                "label": gw_data.get("gateway_label", gw),
+                "magnitude_256d": round(float(gw_data.get("magnitude_256d", 0.0)), 6)
+            }
+
+        result = {
+            "success": True,
+            "profile": profile_name,
+            "data_points": int(len(close)),
+            "regime": {
+                "classification": regime,
+                "stability_level": stability_level,
+                "convergence_score": round(conv_score, 4),
+                "interpretation": (
+                    "High structural coherence across all six gateways - market in equilibrium."
+                    if regime == "stable" else
+                    "Moderate coherence - potential regime shift in progress."
+                    if regime == "transitioning" else
+                    "Low coherence - structural break detected, regimes diverging."
+                )
+            },
+            "structural_analysis": {
+                "chavez_transform_value": round(float(ct_result["value"]), 6),
+                "stability_bound": ct_result["stability_bound"],
+                "patterns_detected": len(patterns),
+                "top_patterns": [
+                    {
+                        "type": p.pattern_type,
+                        "confidence": round(float(p.confidence), 3),
+                        "description": p.description
+                    }
+                    for p in sorted(patterns, key=lambda p: p.confidence, reverse=True)[:3]
+                ]
+            },
+            "gateway_breakdown": gateway_breakdown,
+            "zdtp_convergence": {
+                "score": round(conv_score, 4),
+                "mean_magnitude": round(float(convergence.get("mean_magnitude", 0.0)), 6),
+                "std_dev": round(float(convergence.get("std_dev", 0.0)), 6)
+            },
+            "engine": f"v{__version__}"
+        }
+
+        # Apply profile terminology translation at non-technical levels
+        if level != "technical":
+            pm = ProfileManager()
+            pm.load_profile(profile_name)
+            translate = pm.get_translator()
+            result = translate(result, level)
+
+        return result
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 
 async def compute_high_dimensional(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
