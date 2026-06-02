@@ -64,10 +64,12 @@ class MCPServer:
 
     @property
     def settings(self):
-        """Lazy load settings only when accessed."""
+        """Lazy load settings only when accessed (first tool call, not at startup)."""
         if self._settings is None:
             self._settings = get_config().get_settings()
             logger.setLevel(self._settings.log_level)
+            logger.info(f"Dev mode: {self._settings.enable_dev_mode}")
+            logger.info(f"Auth endpoint: {self._settings.auth_endpoint}")
         return self._settings
         
     async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
@@ -119,13 +121,14 @@ class MCPServer:
     
     async def handle_initialize(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Handle initialization request from client."""
+        from . import __version__
         logger.info("Initializing MCP server")
-        
+
         return {
             "protocolVersion": "2024-11-05",
             "serverInfo": {
                 "name": "cailculator-mcp",
-                "version": "2.0.0"
+                "version": __version__
             },
             "capabilities": {
                 "tools": {}
@@ -382,11 +385,12 @@ async def run_http_server(host: str = "0.0.0.0", port: int = 8080):
         This endpoint is required by Gemini CLI and other HTTP MCP clients.
         """
         tools = get_tools()
+        from cailculator_mcp import __version__
         manifest = {
             "protocolVersion": "2024-11-05",
             "serverInfo": {
                 "name": "cailculator-mcp",
-                "version": "2.0.0"
+                "version": __version__
             },
             "capabilities": {
                 "tools": {}

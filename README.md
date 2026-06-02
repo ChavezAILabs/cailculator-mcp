@@ -191,14 +191,9 @@ CAILculator computes natively across two fundamentally different algebraic frame
 ### Analysis & Visualization
 - **`zdtp_transmit`**: Transmit 16D data through six verified mathematical gateways (S1, S2, S3A, S3B, S4, S5) into 256D spaces.
 - **`illustrate`**: Generate mathematical visualizations (bar charts, heatmaps, multi-panel plots) saved as high-fidelity PNG files.
-- **`regime_detection`**: Dual-method regime classification: HMM statistical baseline benchmarked against Chavez Transform structural analysis.
 - **`get_version`**: Verify engine status and formal verification metadata.
 
-### Financial Analysis
-- **`analyze_dataset`**: Full structural analysis pipeline — pattern detection, regime classification, and Chavez Transform scoring in a single call.
-- **`load_market_data`**: Ingest OHLCV market data for structural analysis; auto-detects column names and handles chunked files over 1GB.
-- **`market_indicators`**: Compute standard technical indicators (RSI, MACD, Bollinger Bands) alongside sedenion structural metrics.
-- **`batch_analyze_market`**: Run structural analysis across multiple instruments or time windows simultaneously, using smart sampling (~5,000 points) for GB-scale datasets with automatic deep-dives on flagged periods.
+> **Financial tools** (`regime_detection`, `load_market_data`, `batch_analyze_market`) are implemented as standalone modules and will be wired into a future release.
 
 ---
 

@@ -8,19 +8,12 @@ import json
 import logging
 import os
 from typing import Any, Dict, List, Optional, Tuple
-import numpy as np
 
-# Force non-interactive matplotlib backend
+# Force non-interactive matplotlib backend before any matplotlib import
 os.environ.setdefault("MPLBACKEND", "Agg")
 
-# v2.0 Core Imports
-from .core.chavez_transform import ChavezTransform
-from .core.canonical_six import get_canonical_six, get_pattern_metadata
-from .core.stability import get_stability_constant, verify_bound
-from .core.bilateral_collapse import verify_bilateral_collapse
-from .core.extended_structures import generate_24_families, map_to_weyl_orbit, detect_g2_family
-from .profiles.manager import ProfileManager
-from .zdtp.protocol import get_zdtp_v2
+# Heavy dependencies (numpy, scipy, clifford, hypercomplex, etc.) are imported
+# lazily inside each tool function so that tools/list responds instantly.
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +125,41 @@ TOOLS_DEFINITIONS = [
         }
     },
     {
+        "name": "compute_high_dimensional",
+        "description": (
+            "Cayley-Dickson algebra operations on hypercomplex elements from 16D (sedenions) to 256D. "
+            "multiply/add/conjugate return the full coefficient vector (all N components). "
+            "norm returns the scalar magnitude. is_zero_divisor checks bilateral annihilation (PQ=0 AND QP=0) "
+            "at 10^-10 — consistent with the verify_bilateral_oracle tool."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "operation": {
+                    "type": "string",
+                    "enum": ["multiply", "add", "conjugate", "norm", "is_zero_divisor"],
+                    "description": "Algebraic operation to perform."
+                },
+                "a": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "description": "First operand coefficient vector."
+                },
+                "b": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "description": "Second operand. Required for multiply, add, is_zero_divisor."
+                },
+                "dimension": {
+                    "type": "integer",
+                    "enum": [16, 32, 64, 128, 256],
+                    "description": "Cayley-Dickson dimension. Inferred from the longer operand if omitted."
+                }
+            },
+            "required": ["operation", "a"]
+        }
+    },
+    {
         "name": "get_version",
         "description": "Returns the current version of the CAILculator MCP server.",
         "inputSchema": {"type": "object", "properties": {}}
@@ -158,6 +186,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         return await zdtp_transmit(arguments)
     elif name == "illustrate":
         return await illustrate(arguments)
+    elif name == "compute_high_dimensional":
+        return await compute_high_dimensional(arguments)
     elif name == "get_version":
         return await get_version(arguments)
     elif name == "regime_detection":
@@ -170,24 +200,28 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
 
 async def chavez_transform(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
+        import numpy as np
+        from .core.chavez_transform import ChavezTransform
+        from .core.canonical_six import get_canonical_six
+
         data = arguments.get("data")
         alpha = float(arguments.get("alpha", 1.0))
         d = int(arguments.get("dimension_param", 2))
-        
+
         if not data: return {"success": False, "error": "No data"}
-            
+
         ct = ChavezTransform(dimension=32, alpha=alpha)
         # Use Pattern 1 as the default anchor for the general transform
         P_arr, Q_arr = get_canonical_six(32)[1]
-        
+
         data_arr = np.array(data)
         def f(x):
             x_scalar = x[0] if x.ndim > 0 and len(x) > 0 else float(x)
             indices = np.linspace(-5, 5, len(data_arr))
             return float(np.sum(data_arr * np.exp(-((x_scalar - indices)**2))))
-            
+
         result = ct.transform_1d(f, P_arr, Q_arr, d)
-        
+
         return {
             "success": True,
             "transform_value": float(result["value"]),
@@ -198,8 +232,9 @@ async def chavez_transform(arguments: Dict[str, Any]) -> Dict[str, Any]:
         return {"success": False, "error": str(e)}
 
 async def detect_patterns(arguments: Dict[str, Any]) -> Dict[str, Any]:
-    from .patterns import PatternDetector
     try:
+        import numpy as np
+        from .patterns import PatternDetector
         data = np.array(arguments.get("data", []))
         alpha = float(arguments.get("alpha", 1.0))
         detector = PatternDetector(alpha=alpha)
@@ -207,7 +242,7 @@ async def detect_patterns(arguments: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "success": True,
             "patterns_detected": [
-                {"type": p.pattern_type, "confidence": p.confidence, "description": p.description, "metrics": p.metrics} 
+                {"type": p.pattern_type, "confidence": p.confidence, "description": p.description, "metrics": p.metrics}
                 for p in patterns
             ]
         }
@@ -216,6 +251,8 @@ async def detect_patterns(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
 async def verify_bilateral_oracle(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
+        import numpy as np
+        from .core.bilateral_collapse import verify_bilateral_collapse
         P = np.array(arguments.get("P"))
         Q = np.array(arguments.get("Q"))
         fw = arguments.get("framework", "cayley-dickson")
@@ -225,22 +262,26 @@ async def verify_bilateral_oracle(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
 async def map_e8_orbit(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
+        import numpy as np
+        from .core.extended_structures import map_to_weyl_orbit
         v = np.array(arguments.get("vector"))
         return map_to_weyl_orbit(v)
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 async def list_domain_profiles(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    from .profiles.manager import ProfileManager
     pm = ProfileManager()
     return {"success": True, "profiles": pm.list_profiles()}
 
 async def zdtp_transmit(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
+        from .zdtp.protocol import get_zdtp_v2
         input_16d = list(arguments.get("input_16d", []))
         gateway = arguments.get("gateway")
         restrict_to_pattern = arguments.get("restrict_to_pattern")
         profile = arguments.get("profile", "general_data")
-        
+
         zdtp = get_zdtp_v2()
         
         if gateway == "all":
@@ -269,7 +310,7 @@ async def zdtp_transmit(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
 async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
-        from . import visualizations as viz
+        from . import visualizations as viz, __version__
         from pathlib import Path
         import time
         import base64 as _b64
@@ -308,11 +349,87 @@ async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
             "image": image_b64,
             "media_type": "image/png",
             "description": description,
-            "engine": "v2.1.0"
+            "engine": f"v{__version__}"
         }
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+async def compute_high_dimensional(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        from hypercomplex import Sedenion, Pathion, Chingon, CD128, CD256
+
+        _DIM_CLASS = {16: Sedenion, 32: Pathion, 64: Chingon, 128: CD128, 256: CD256}
+        VALID_OPS = {"multiply", "add", "conjugate", "norm", "is_zero_divisor"}
+
+        operation = arguments.get("operation")
+        if operation not in VALID_OPS:
+            return {"success": False, "error": f"operation must be one of {sorted(VALID_OPS)}"}
+
+        a_coeffs = list(arguments.get("a") or [])
+        b_coeffs = list(arguments.get("b") or [])
+
+        dimension = arguments.get("dimension")
+        if dimension is None:
+            max_len = max(len(a_coeffs), len(b_coeffs) if b_coeffs else 0)
+            dimension = next((d for d in [16, 32, 64, 128, 256] if d >= max_len), None)
+            if dimension is None:
+                return {"success": False, "error": f"Input length {max_len} exceeds max supported dimension 256"}
+        else:
+            dimension = int(dimension)
+
+        if dimension not in _DIM_CLASS:
+            return {"success": False, "error": f"dimension must be one of [16, 32, 64, 128, 256], got {dimension}"}
+
+        cls = _DIM_CLASS[dimension]
+
+        def pad(coeffs):
+            return (list(coeffs) + [0.0] * dimension)[:dimension]
+
+        a_elem = cls(*pad(a_coeffs))
+
+        if operation == "conjugate":
+            return {
+                "success": True, "operation": operation, "dimension": dimension,
+                "result": list(a_elem.conjugate()), "precision": "10^-15"
+            }
+
+        if operation == "norm":
+            return {
+                "success": True, "operation": operation, "dimension": dimension,
+                "norm": float(abs(a_elem)), "precision": "10^-15"
+            }
+
+        if not b_coeffs:
+            return {"success": False, "error": f"operation '{operation}' requires argument 'b'"}
+        b_elem = cls(*pad(b_coeffs))
+
+        if operation == "multiply":
+            return {
+                "success": True, "operation": operation, "dimension": dimension,
+                "result": list(a_elem * b_elem), "precision": "10^-15"
+            }
+
+        if operation == "add":
+            return {
+                "success": True, "operation": operation, "dimension": dimension,
+                "result": list(a_elem + b_elem), "precision": "10^-15"
+            }
+
+        # is_zero_divisor
+        pq_norm = float(abs(a_elem * b_elem))
+        qp_norm = float(abs(b_elem * a_elem))
+        threshold = 1e-10
+        return {
+            "success": True, "operation": operation, "dimension": dimension,
+            "is_bilateral_zero_divisor": pq_norm < threshold and qp_norm < threshold,
+            "PQ_norm": pq_norm, "QP_norm": qp_norm,
+            "threshold": threshold, "precision": "10^-15"
+        }
+
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 
 async def get_version(arguments: Dict[str, Any]) -> Dict[str, Any]:
     """Returns the version information for the CAILculator MCP."""

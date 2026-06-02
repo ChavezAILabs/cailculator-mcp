@@ -1,9 +1,9 @@
 """
-CAILculator MCP - Production Engine v2.1.2
+CAILculator MCP - Production Engine v2.1.3
 Universal high-precision mathematical data analysis
 """
 
-__version__ = "2.1.2"
+__version__ = "2.1.3"
 
 from .server import MCPServer, main
 
