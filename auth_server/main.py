@@ -53,10 +53,10 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 # Stripe Price IDs (LIVE MODE - Production)
 STRIPE_PRICES = {
-    "individual": "price_1SNlPU2NNm10BnLC1ufwG07s",    # $50/month - 25,000 requests
-    "journalist": "manual",                           # $75/month - 50,000 requests (NEW)
-    "academic": "price_1SNlQz2NNm10BnLC3wFUtekN",      # $100/month - 75,000 requests
-    "commercial": "price_1SNlUg2NNm10BnLCy2NhebOI",    # $250/month per seat - 250,000 requests
+    "individual": "price_1Tdyrt2NNm10BnLCMe5wP9XN",    # $50/month - 25,000 requests
+    "journalist": "price_1Tdyl42NNm10BnLCRgqZQnUF",    # $75/month - 50,000 requests
+    "academic": "price_1TdyvL2NNm10BnLC5704Cv5U",      # $100/month - 75,000 requests
+    "commercial": "price_1TdyxN2NNm10BnLCI9XjeRNt",    # $250/month per seat - 250,000 requests
     # Quant Trader Tiers
     "quant_explorer": "price_1SQGie2NNm10BnLCyraRcDSA",      # $599/month - 100,000 requests
     "quant_professional": "price_1SXDc82NNm10BnLC36hwqnaA",  # $1,499/month - 500,000 requests
@@ -987,10 +987,10 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 
                 # Map live Stripe price IDs to tiers
                 price_to_tier = {
-                    "price_1SNlPU2NNm10BnLC1ufwG07s": "individual",   # $50/month
-                    # "TODO_JOURNALIST_PRICE_ID": "journalist",        # $75/month - add once created in Stripe
-                    "price_1SNlQz2NNm10BnLC3wFUtekN": "academic",     # $100/month
-                    "price_1SNlUg2NNm10BnLCy2NhebOI": "commercial",   # $250/month
+                    "price_1Tdyrt2NNm10BnLCMe5wP9XN": "individual",   # $50/month
+                    "price_1Tdyl42NNm10BnLCRgqZQnUF": "journalist",   # $75/month
+                    "price_1TdyvL2NNm10BnLC5704Cv5U": "academic",     # $100/month
+                    "price_1TdyxN2NNm10BnLCI9XjeRNt": "commercial",   # $250/month
                     "price_1SQGie2NNm10BnLCyraRcDSA": "quant_explorer",      # $599/month
                     "price_1SXDc82NNm10BnLC36hwqnaA": "quant_professional",  # $1,499/month
                     "price_1SQGox2NNm10BnLCcROJSo91": "quant_elite"          # $3,499/month
