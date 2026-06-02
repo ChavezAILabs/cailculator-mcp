@@ -60,7 +60,7 @@ TOOLS_DEFINITIONS = [
     },
     {
         "name": "map_e8_orbit",
-        "description": "Projects a 16D/32D vector onto verified E8 Weyl orbits.",
+        "description": "Projects the first 8 components (octonion half) of a 16D/32D input onto verified E8 Weyl orbits. Components e8-e15 of a 16D sedenion input are not included in the projection; a full-sedenion input returning is_on_first_shell=false is expected behavior.",
         "inputSchema": {
             "type": "object",
             "properties": {
