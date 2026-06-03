@@ -179,12 +179,12 @@ The **Profile Manager** projects universal algebraic patterns into domain-specif
 
 ## Available Tools
 
-CAILculator computes natively across two fundamentally different algebraic frameworks — non-associative **Cayley-Dickson** and associative **Clifford (Geometric)** — at dimensions from 16D to 256D. This is a rare capability: most mathematical software commits to one framework. Cross-framework comparison is how our research identified S2 as the only Canonical Six gateway that holds bilateral status in both — documented in the Zenodo paper.
+CAILculator computes natively across two fundamentally different algebraic frameworks — non-associative **Cayley-Dickson** and associative **Clifford (Geometric)** — at dimensions from 16D to 256D. This is a rare capability: most mathematical software commits to one framework. CAILculator runs the same structural computation in both and surfaces where they disagree — which is how S2 stands out as the only Canonical Six gateway bilateral in both frameworks, a distinction invisible from inside either one alone. With `verify_bilateral_oracle`'s `framework` argument you can reproduce this directly.
 
 ### High-Precision Research
 - **`chavez_transform`**: Apply the verified integral transform to identify hidden structures in numerical data.
 - **`detect_patterns`**: Multi-stage pipeline identifying linear, geometric, Fibonacci, and complex symmetry patterns.
-- **`verify_bilateral_oracle`**: High-precision check that a candidate pair $(P, Q)$ is a bilateral zero divisor — confirming both $PQ = 0$ and $QP = 0$ numerically at $10^{-15}$ precision (classification threshold $10^{-10}$). Returns the residual $\|PQ\|$ and $\|QP\|$ norms.
+- **`verify_bilateral_oracle`**: Exact bilateral zero-divisor check ($PQ = 0 \land QP = 0$) at $10^{-15}$ precision, runnable in either the non-associative **Cayley-Dickson** or associative **Clifford** framework via the `framework` argument. Running both and comparing is the point: S2 is the only Canonical Six gateway bilateral in both, while the others (e.g. S1) collapse in Cayley-Dickson but stay one-sided in Clifford ($\|QP\| = 2\sqrt{2}$). The divergence is the structural signal. Returns the residual $\|PQ\|$ and $\|QP\|$ norms.
 - **`map_e8_orbit`** *(experimental)*: Projects a vector onto E8 first-shell Weyl orbits. Currently maps the first 8 coordinates (the octonion half) only — 16D inputs with support in e₈–e₁₅ have that half dropped, so a full-16D vector can report as off-shell. Under active development.
 - **`compute_high_dimensional`**: Direct sedenion algebra operations (multiply, add, conjugate, norm, zero divisor classification) extended into 32D–256D spaces.
 
