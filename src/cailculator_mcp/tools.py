@@ -71,7 +71,7 @@ TOOLS_DEFINITIONS = [
     },
     {
         "name": "list_domain_profiles",
-        "description": "Lists available v2.0 domain profiles (Quant, Journalism, RHI).",
+        "description": "Lists available domain profiles (RHI, Quant Equity, Journalism, General Data, Developer) plus custom-request info.",
         "inputSchema": {"type": "object", "properties": {}}
     },
     {

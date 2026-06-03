@@ -20,43 +20,62 @@ class ProfileManager:
     """
     Manages the lifecycle and orchestration of domain profiles.
     """
-    
+
+    _PROFILE_METADATA = {
+        "rhi":          {"tier": "Academic",    "scope": "Riemann Hypothesis Investigation — prime embeddings (log p → 16D root) and spectral structure."},
+        "quant_equity": {"tier": "Quant",       "scope": "Market regime detection from OHLCV: volatility anchors, technical indicators, Chavez Transform stability."},
+        "journalism":   {"tier": "Journalist",  "scope": "Structural tipping points and signal robustness in gathered data (e.g. FEC campaign finance)."},
+        "general_data": {"tier": "Individual",  "scope": "General-purpose numerical structure analysis."},
+        "developer_v1": {"tier": "Individual",  "scope": "Developer / debugging profile."},
+    }
+
     def __init__(self, profiles_dir: Optional[str] = None):
         if profiles_dir is None:
             profiles_dir = os.path.dirname(os.path.abspath(__file__))
         self.profiles_dir = profiles_dir
         self.active_profile: Optional[Dict] = None
         self.active_name: str = "general_data"  # Default
-        
+
     def list_profiles(self) -> List[Dict[str, Any]]:
         """
-        Enumerates all available profiles on disk.
-        Includes a 'Custom Request' entry for commercial leads.
+        A directory is a profile if it has a manifest.json OR a coefficient_mapping.py
+        / terminology.py module. Manifest data wins when present; otherwise a built-in
+        descriptor is used. Always appends the commercial 'custom_request' lead entry.
         """
         profiles = []
-        
-        # 1. Scan directory for manifest.json files
-        for entry in os.listdir(self.profiles_dir):
+        for entry in sorted(os.listdir(self.profiles_dir)):
             full_path = os.path.join(self.profiles_dir, entry)
+            if not os.path.isdir(full_path) or entry.startswith("__"):
+                continue
             manifest_path = os.path.join(full_path, "manifest.json")
-            
-            if os.path.isdir(full_path) and os.path.exists(manifest_path):
+            is_profile = (
+                os.path.exists(manifest_path)
+                or os.path.exists(os.path.join(full_path, "coefficient_mapping.py"))
+                or os.path.exists(os.path.join(full_path, "terminology.py"))
+            )
+            if not is_profile:
+                continue
+            if os.path.exists(manifest_path):
                 try:
-                    with open(manifest_path, 'r') as f:
-                        manifest = json.load(f)
-                        profiles.append(manifest)
+                    with open(manifest_path, "r") as f:
+                        profiles.append(json.load(f))
+                    continue
                 except Exception as e:
                     logger.error(f"Failed to load manifest for {entry}: {e}")
-        
-        # 2. Add the Commercial 'Custom' entry
+            meta = self._PROFILE_METADATA.get(entry, {})
+            profiles.append({
+                "name": entry,
+                "tier": meta.get("tier", "Individual"),
+                "scope": meta.get("scope", f"{entry} domain profile."),
+            })
+
         profiles.append({
             "name": "custom_request",
             "tier": "Commercial",
             "scope": "Bespoke high-stakes embeddings for LHC, F1, or Biotech",
             "contact": "iknowpi@gmail.com",
-            "note": "Contact us to build a verified bridge for your specialized data."
+            "note": "Contact us to build a verified bridge for your specialized data.",
         })
-        
         return profiles
 
     def load_profile(self, name: str) -> bool:

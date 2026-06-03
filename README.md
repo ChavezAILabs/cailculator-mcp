@@ -18,7 +18,7 @@ The core mathematical foundation of CAILculator is **formally verified** in Lean
 
 - **[BilateralCollapse.lean](./lean/BilateralCollapse.lean)**: Proves the bilateral zero divisor identity ($PQ=0 \land QP=0$) used to gate all v2.0+ transmissions.
 - **[ChavezTransform_genuine.lean](./lean/ChavezTransform_genuine.lean)**: Establishes the stability constant $M$, guaranteeing transform outputs never exceed theoretical bounds ($|C[f]| \leq M \cdot \|f\|_1$).
-- **[e8_weyl_orbit_unification.lean](./lean/e8_weyl_orbit_unification.lean)**: Proves the E8 structural foundation of the Canonical Six. E8 is the largest and most exceptional of the exceptional Lie groups — a 248-dimensional structure that governs the densest known sphere packing in 8 dimensions, appears at the deepest levels of theoretical physics and string theory, and is widely regarded as the most intricate and beautiful object in all of mathematics. It is not a coincidence that the Canonical Six live here. The Lean 4 proof (zero sorry stubs) establishes that all six gateway P-vectors lie on the E8 first shell (norm² = 2), form a single Weyl orbit under dominant weight ω₁, and include the antipodal pair v₂ + v₃ = 0 connected by Weyl reflection sα₄. The Canonical Six are not an arbitrary selection from 84 bilateral zero divisor pairs — they are E8 structure.
+- **[e8_weyl_orbit_unification.lean](./lean/e8_weyl_orbit_unification.lean)**: An exploratory result connecting the Canonical Six to E8 lattice structure — the Lean 4 proof establishes that the six gateway P-vectors lie on the E8 first shell (norm² = 2) and fall within a single Weyl orbit, including an antipodal pair related by Weyl reflection. This is the most preliminary of CAILculator's formal components and an active area of work; the associated tooling (`map_e8_orbit`) is correspondingly experimental.
 ---
 
 ## The Chavez Transform
@@ -179,13 +179,13 @@ The **Profile Manager** projects universal algebraic patterns into domain-specif
 
 ## Available Tools
 
-CAILculator computes natively across two fundamentally different algebraic frameworks — non-associative **Cayley-Dickson** and associative **Clifford (Geometric)** — at dimensions from 16D to 256D. This is a rare capability: most mathematical software commits to one framework. Running the same structural computation in both and comparing results is how CAILculator discovered that S2 is the only Canonical Six gateway bilateral in both frameworks — a finding invisible from inside either framework alone.
+CAILculator computes natively across two fundamentally different algebraic frameworks — non-associative **Cayley-Dickson** and associative **Clifford (Geometric)** — at dimensions from 16D to 256D. This is a rare capability: most mathematical software commits to one framework. Cross-framework comparison is how our research identified S2 as the only Canonical Six gateway that holds bilateral status in both — documented in the Zenodo paper.
 
 ### High-Precision Research
 - **`chavez_transform`**: Apply the verified integral transform to identify hidden structures in numerical data.
 - **`detect_patterns`**: Multi-stage pipeline identifying linear, geometric, Fibonacci, and complex symmetry patterns.
-- **`verify_bilateral_oracle`**: High-precision bilateral zero divisor check ($10^{-15}$) run independently in both Cayley-Dickson and Clifford frameworks. Results can agree or diverge — the divergence is the finding. This is the tool that confirmed S2 as the only Canonical Six gateway bilateral in both.
-- **`map_e8_orbit`**: Project high-dimensional vectors onto verified E8 Weyl orbits.
+- **`verify_bilateral_oracle`**: High-precision check that a candidate pair $(P, Q)$ is a bilateral zero divisor — confirming both $PQ = 0$ and $QP = 0$ numerically at $10^{-15}$ precision (classification threshold $10^{-10}$). Returns the residual $\|PQ\|$ and $\|QP\|$ norms.
+- **`map_e8_orbit`** *(experimental)*: Projects a vector onto E8 first-shell Weyl orbits. Currently maps the first 8 coordinates (the octonion half) only — 16D inputs with support in e₈–e₁₅ have that half dropped, so a full-16D vector can report as off-shell. Under active development.
 - **`compute_high_dimensional`**: Direct sedenion algebra operations (multiply, add, conjugate, norm, zero divisor classification) extended into 32D–256D spaces.
 
 ### Analysis & Visualization
