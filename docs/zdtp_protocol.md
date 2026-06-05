@@ -20,7 +20,7 @@ The sedenions $\mathbb{S}$ are the 16-dimensional algebra produced by applying t
 
 $$\mathbb{R} \to \mathbb{C} \to \mathbb{H} \to \mathbb{O} \to \mathbb{S} \to \mathbb{P} \to \cdots$$
 
-preserves the previous algebra as a subalgebra while introducing new structure. The sedenions are the first algebra in this tower to contain **zero divisors** — non-zero elements whose product is zero. The 32-dimensional **Pathions** $\mathbb{P}$, 64-dimensional **Chingons**, 128-dimensional **Routons**, and 256-dimensional **Voudons** each inherit and extend this zero divisor structure.
+preserves the previous algebra as a subalgebra while introducing new structure. The sedenions are the first algebra in this tower to contain **zero divisors** — non-zero elements whose product is zero. The 32-dimensional **pathions** $\mathbb{P}$ and the 64-dimensional, 128-dimensional, and 256-dimensional algebras beyond them each inherit and extend this zero divisor structure.
 
 ZDTP exploits this tower. A 16D sedenion state is transmitted upward through the tower to 256D, using the zero divisor structure at each level as the transmission mechanism.
 
@@ -55,15 +55,15 @@ with $P \neq 0$ and $Q \neq 0$. The Canonical Six are:
 
 ### Why These Six
 
-The Canonical Six are not an arbitrary selection from the 84 bilateral zero divisor pairs in 16D sedenion space. They are distinguished by three properties, all formally verified:
+The Canonical Six are not an arbitrary selection from the 84 bilateral zero divisor pairs in 16D sedenion space. Two of their properties are formally verified; a third is an active area of exploratory research:
 
-1. **E8 first shell membership**: All six gateway vectors lie on the E8 lattice first shell (norm² = 2), connecting the zero divisor structure of the sedenions to the most exceptional lattice in mathematics.
+1. **E8 first shell membership (exploratory)**: An exploratory Lean 4 result (`e8_weyl_orbit_unification.lean`) establishes that the five distinct P-vectors of the Canonical Six have norm² = 2, consistent with lying on the E8 first shell, and that all five reduce to the same dominant weight under sequences of Weyl reflections — suggesting a connection to a single Weyl orbit. One antipodal pair is formally connected by a single simple reflection (sα₄). This is the most preliminary of CAILculator's formal components; the E8 orbit structure is an active area of work.
 
-2. **Single Weyl orbit**: The six gateways form a single 24-element Weyl orbit family under the dominant E8 symmetry group — they are algebraically equivalent under the symmetry of the lattice.
+2. **Cross-framework presence (formally verified)**: Zero divisor structure persists across both Cayley-Dickson and Clifford (Geometric) algebraic representations. S2 is fully bilateral (PQ=0 ∧ QP=0) in both frameworks across 16D–256D. The remaining five are bilateral in Cayley-Dickson and unilateral in Clifford (PQ=0, QP≠0 — e.g. S1 produces ‖QP‖ = 2√2). This persistence across frameworks and dimensional doublings confirms these patterns are not artifacts of a particular algebraic convention.
 
-3. **Cross-framework presence**: Zero divisor structure persists across both Cayley-Dickson and Clifford (Geometric) algebraic representations. S2 is fully bilateral (PQ=0 ∧ QP=0) in both frameworks across 16D–256D. The remaining five are bilateral in Cayley-Dickson and unilateral in Clifford (PQ=0, QP≠0 — e.g. S1 produces ‖QP‖ = 2√2). This persistence across frameworks and dimensional doublings confirms these patterns are not artifacts of a particular algebraic convention.
+3. **Bilateral zero divisor identity (formally verified)**: The bilateral property PQ=0 ∧ QP=0 for each of the six gateway pairs is proved in `lean/BilateralCollapse.lean` and independently confirmed at runtime at 10⁻¹⁵ precision.
 
-These three properties are the empirical discovery that initiated the research program, published at [DOI 10.5281/zenodo.17402495](https://doi.org/10.5281/zenodo.17402495).
+The cross-framework discovery initiated the research program, published at [DOI 10.5281/zenodo.17402495](https://doi.org/10.5281/zenodo.17402495).
 
 ---
 
@@ -147,7 +147,7 @@ MODERATE convergence is the most information-rich regime for exploratory researc
 
 **Bilateral Zero Divisor Identity**: The six canonical gateway pairs satisfy $PQ = 0 \wedge QP = 0$ in 16D sedenion space. This proof was verified by Aristotle (Harmonic Math's independent Lean 4 engine) with zero sorry stubs.
 
-**scalar_channel**: Any linear combination $\lambda P + \mu Q$ of a gateway pair always produces a scalar result under multiplication. Structure collapses cleanly to the real channel — no spurious imaginary components are generated at any transmission stage.
+**scalar_channel**: For any scalars $a, b, c$, the product $(aP + bQ)(bP + cQ) = (-2b(a+c)) \cdot e_0$. Any product of two elements drawn from the span of a gateway pair — with matched cross-coefficient structure — collapses cleanly to the real channel. No spurious imaginary components are generated at any transmission stage.
 
 The scalar_channel theorem is the algebraic guarantee that ZDTP's dimensional expansion is clean. At each doubling stage, the interaction does not scatter energy into unexpected dimensions — it propagates the structural content of the input faithfully.
 
@@ -169,9 +169,9 @@ The formal verification chain operates in three stages:
 
 The deepest application of ZDTP to date is the CAIL-RH Investigation (74+ phases as of May 2026). The protocol maps Riemann zeros $\gamma_n$ into 16D sedenion space via the RHI profile ($\log p \to ROOT_{16D}$) and transmits them through the full ZDTP cascade.
 
-Empirical finding across CAILculator Runs A–C: inputs corresponding to zeros on the critical line ($\text{Re}(s) = \frac{1}{2}$) consistently produce HIGH convergence (>0.8) across all six gateways. The Q-11 universality result (Phase 73) formally documents that the 2$\sigma$ coordinate scaling law holds universally across all six gateways — gateway independence is not merely an average effect but holds at every tested zero.
+Empirical finding across CAILculator Runs A–C: inputs corresponding to zeros on the critical line ($\text{Re}(s) = \frac{1}{2}$) consistently produce HIGH convergence (>0.8) across all six gateways, while perturbed inputs do not. This convergence universality — confirmed across Runs A–C and holding at every tested zero, not merely on average — is a numerical observation.
 
-This convergence universality is one of three independent standard-axiom characterizations of the critical line emerging from the investigation. The others involve the Gateway Integer Law (`GatewayScaling.lean`, Phase 74) and spectral identification (`SpectralIdentification.lean`, Phase 73).
+Separately, and not to be conflated with it, the CAIL-RH Investigation has developed three independent standard-axiom characterizations of the critical line in Lean 4: the energy-minimum, spectral-containment, and arithmetic-integrality routes (Phase 74+). These are formally proved results; the HIGH-convergence empirical finding is a distinct, corroborating numerical observation from the same research program.
 
 ### Quantitative Finance
 
@@ -180,7 +180,7 @@ Bitcoin rolling window analysis (718 windows, January 2024–January 2026) using
 - **LOW stability events** at June and December 2024 consolidation periods — both preceded large directional moves
 - **HIGH stability** at the January 2025 correction — structural coherence despite price turbulence
 
-The dual-method approach (ZDTP convergence score + HMM baseline) provides two independent signals. Agreement between methods indicates high-confidence regime classification; divergence indicates a structural transition that one method is detecting before the other.
+The ZDTP convergence score provides a single structural signal. HIGH convergence (>0.8) indicates the market's structure propagates uniformly across all six algebraic pathways — a stable regime. LOW convergence indicates structural asymmetry that typically precedes or coincides with regime transitions. The `analyze_dataset` tool automates this interpretation, returning STABLE, TRANSITIONING, or SHIFTING classifications.
 
 ### Investigative Journalism
 
@@ -209,7 +209,7 @@ The typical workflow: apply the Chavez Transform to identify which inputs carry 
 ## Further Reading
 
 - **[Chavez Transform Explainer](./chavez_transform.md)** — The kernel mechanism, stability bound, and formal verification chain for the transform underlying the ZDTP gateways.
-- **[Project Glossary](./GLOSSARY.md)** — Definitions for sedenions, Pathions, Chingons, Voudons, bilateral zero divisors, and all domain-specific terminology.
+- **[Project Glossary](./GLOSSARY.md)** — Definitions for sedenions, pathions, and higher-dimensional algebraic structures; bilateral zero divisors and all domain-specific terminology.
 - **Research DOI**: [10.5281/zenodo.17402495](https://doi.org/10.5281/zenodo.17402495) — *"Framework-Independent Zero Divisor Patterns in Higher-Dimensional Cayley-Dickson Algebras: Discovery and Verification of The Canonical Six"*
 - **Lean source**: [`lean/BilateralCollapse.lean`](../lean/BilateralCollapse.lean)
 

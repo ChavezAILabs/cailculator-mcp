@@ -270,8 +270,8 @@
         </div>
         <div class="card fade-in">
           <div class="tool-tag">FINANCIAL</div>
-          <h3>regime_detection</h3>
-          <p>Dual-method regime classification. An HMM statistical baseline runs in parallel with Chavez Transform structural analysis — two independent reads on the same data. Disagreement between methods is itself a structural signal.</p>
+          <h3>analyze_dataset</h3>
+          <p>Full structural analysis pipeline in one call: Chavez Transform stability scoring + six-gateway ZDTP cascade to 256D. Returns regime classification (STABLE / TRANSITIONING / SHIFTING), convergence score, and per-gateway magnitudes. Accepts close-price list or OHLCV dict; minimum 16 data points.</p>
         </div>
         <div class="card fade-in">
           <div class="tool-tag">TRANSMISSION</div>
@@ -292,7 +292,7 @@
         <div class="card fade-in">
           <div class="mono" style="color:var(--accent); margin-bottom:8px">PRO-01</div>
           <h3>Quant Equity</h3>
-          <p>Dual-method analysis bridging HMM statistical baselines with algebraic structural analysis. OHLCV mapping to sedenion gateways.</p>
+          <p>Algebraic structural regime analysis via Chavez Transform stability scoring and six-gateway ZDTP cascade. OHLCV data mapped to sedenion gateways; returns STABLE / TRANSITIONING / SHIFTING classification with convergence score.</p>
         </div>
         <div class="card fade-in">
           <div class="mono" style="color:var(--accent); margin-bottom:8px">PRO-02</div>
@@ -380,9 +380,9 @@
           <div class="price-amount">$599<span>/mo</span></div>
           <ul class="price-features">
             <li>100,000 requests/mo</li>
-            <li>Dual-method regime detection</li>
-            <li>10 technical indicators</li>
-            <li>Standard data loaders</li>
+            <li>Structural regime analysis (analyze_dataset)</li>
+            <li>Full ZDTP cascade to 256D</li>
+            <li>Quant Equity profile access</li>
           </ul>
           <a href="/create-checkout-session?tier=quant_explorer" class="price-btn">Get Started</a>
         </div>
@@ -392,9 +392,9 @@
           <div class="price-amount">$1,499<span>/mo</span></div>
           <ul class="price-features">
             <li>500,000 requests/mo</li>
-            <li>Up to 5M records/analysis</li>
-            <li>Batch processing mode</li>
+            <li>High-throughput structural analysis</li>
             <li>Custom pattern analysis</li>
+            <li>Priority support</li>
           </ul>
           <a href="/create-checkout-session?tier=quant_professional" class="price-btn">Get Started</a>
         </div>
@@ -404,9 +404,9 @@
           <div class="price-amount">$3,499<span>/mo</span></div>
           <ul class="price-features">
             <li>Unlimited requests</li>
-            <li>GB-scale processing</li>
             <li>Strategy sessions</li>
             <li>White-label options</li>
+            <li>Dedicated support</li>
           </ul>
           <a href="/create-checkout-session?tier=quant_elite" class="price-btn">Get Started</a>
         </div>

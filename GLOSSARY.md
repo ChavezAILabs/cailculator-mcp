@@ -13,10 +13,8 @@
 *   **Bilateral Zero Divisor**: A specific, highly symmetric zero divisor pair where both $P \times Q = 0$ and $Q \times P = 0$. CAILculator uses verified bilateral pairs to ensure structural integrity during data transmission.
 *   **Sedenion (16D)**: The fifth algebra in the Cayley-Dickson sequence. The first to exhibit zero divisors and non-associativity.
 *   **Pathion (32D)**: The sixth algebra in the Cayley-Dickson sequence.
-*   **Chingon (64D)**: The seventh algebra in the Cayley-Dickson sequence. (Accepted name in the mathematical community).
-*   **Rouxon (128D)**: The eighth algebra in the Cayley-Dickson sequence.
-*   **Voudon (256D)**: The ninth algebra in the Cayley-Dickson sequence. Used as the "Algebraic Ceiling" for CAILculator’s deepest structural cascades.
-*   **Canonical Six (S1–S6)**: A set of six universal bilateral zero divisor pairs identified by Chavez AI Labs. These serve as the "gateways" for all ZDTP transmissions.
+*   **Higher-dimensional Cayley-Dickson algebras (64D, 128D, 256D)**: The Cayley-Dickson sequence continues beyond the pathions through the 64-dimensional, 128-dimensional, and 256-dimensional algebras. CAILculator uses 256D as its algebraic ceiling for the deepest structural cascades. These algebras are referred to by dimension rather than by idiosyncratic informal names.
+*   **Canonical Six (S1, S2, S3A, S3B, S4, S5)**: A set of six universal bilateral zero divisor pairs identified by Chavez AI Labs. These serve as the "gateways" for all ZDTP transmissions.
 
 ## II. Algorithms & Protocols
 *The tools used to hunt for structure in "algebraic dark matter."*
@@ -34,7 +32,7 @@
 *   **Sourcing Confidence (Journalism)**: A projection of **Transform Convergence**, measuring how robust a mathematical signal is against noise or "dirty" public records.
 *   **Volatility Regime Shift (Quant)**: A projection of **Bilateral Zero Divisors** used to identify fundamental changes in market mood or bifurcation risks.
 *   **Mean Reversion Strength (Quant)**: A projection of **Conjugation Symmetry**, indicating how strongly price data aligns with historical averages.
-*   **Spectral Coherence (RHI)**: A measure of how well prime distribution distributions align with the Riemann surface when mapped through the 16D Weyl orbits.
+*   **Spectral Coherence (RHI)**: A measure of how well the distribution of nontrivial Riemann zeros aligns with the critical line (Re(s) = ½) when mapped through the 16D algebraic gateway structure.
 
 ## IV. Formal Verification & Rigor
 *The standards of certainty for AGI-ready mathematics.*

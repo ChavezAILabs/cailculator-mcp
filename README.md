@@ -8,7 +8,7 @@
 
 > *Higher-dimensional algebras following the Cayley-Dickson sequence—often dismissed as "pathological"—can be interpreted and exploited for computational advantage, specifically for AGI research and the development of structure-preserving embeddings.*
 
-CAILculator puts that hypothesis to work — a Model Context Protocol (MCP) server that empowers AI agents to analyze and compute within high-dimensional algebraic spaces (16D Sedenions to 256D Voudons), providing a ground-truth mathematical engine for representation learning, sequence detection, and regime analysis, anchored by the **Lean 4 formally verified** Chavez Transform and the Zero Divisor Transmission Protocol (ZDTP).
+CAILculator puts that hypothesis to work — a Model Context Protocol (MCP) server that empowers AI agents to analyze and compute within high-dimensional algebraic spaces (16D sedenions to 256D), providing a ground-truth mathematical engine for representation learning, sequence detection, and regime analysis, anchored by the **Lean 4 formally verified** Chavez Transform and the Zero Divisor Transmission Protocol (ZDTP).
 
 ---
 
@@ -87,7 +87,7 @@ Extended theoretical frameworks and protocol specifications for researchers:
 
 - **[Chavez Transform Explainer](./docs/chavez_transform.md)**: The historical context, zero divisor kernel mechanism, stability bound, scalar channel theorem, formal verification chain, and research applications across RHI, finance, and journalism.
 - **[ZDTP Protocol Specification](./docs/zdtp_protocol.md)**: The Zero Divisor Transmission Protocol in full — Cayley-Dickson tower mechanics, four-factor interaction, recursive 16D→256D expansion, convergence scoring, and the Lean-to-runtime verification pipeline.
-- **[Project Glossary](./GLOSSARY.md)**: Definitive terminology for high-dimensional algebraic structures (Sedenions, Chingons, Voudons) and their domain projections in journalism and quantitative finance.
+- **[Project Glossary](./GLOSSARY.md)**: Definitive terminology for high-dimensional algebraic structures (sedenions, pathions, and higher-dimensional algebras) and their domain projections in journalism and quantitative finance.
 
 ---
 
@@ -209,7 +209,7 @@ CAILculator computes natively across two fundamentally different algebraic frame
 
 ## Glossary & Terminology
 
-To support rigorous cross-disciplinary collaboration, we maintain a definitive **[Project Glossary](./GLOSSARY.md)** establishing terminology for high-dimensional algebraic structures (Sedenions, Chingons, Voudons) and their domain projections in journalism and quantitative finance.
+To support rigorous cross-disciplinary collaboration, we maintain a definitive **[Project Glossary](./GLOSSARY.md)** establishing terminology for high-dimensional algebraic structures (sedenions, pathions, and higher-dimensional algebras) and their domain projections in journalism and quantitative finance.
 
 ---
 

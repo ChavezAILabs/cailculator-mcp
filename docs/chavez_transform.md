@@ -28,7 +28,7 @@ These are **bilateral zero divisors**: neither $P$ nor $Q$ is zero, yet their pr
 
 ### The Canonical Six
 
-CAILculator's Chavez Transform uses a specific set of six bilateral zero divisor pairs, formally verified in Lean 4 to lie on the E8 first shell and form a single Weyl orbit family:
+CAILculator's Chavez Transform uses a specific set of six bilateral zero divisor pairs. An exploratory Lean 4 result (`e8_weyl_orbit_unification.lean`) connects the five distinct P-vectors of the Canonical Six to the E8 first shell (norm² = 2) and finds that all five reduce to the same dominant weight under a sequence of Weyl reflections, including an antipodal pair linked by a single simple reflection (sα₄). This is the most preliminary of CAILculator's formal components and an active area of work:
 
 | Gateway | Identity | Properties |
 |---------|----------|------------|
@@ -39,7 +39,7 @@ CAILculator's Chavez Transform uses a specific set of six bilateral zero divisor
 | S4 | $(e_1 - e_{14}) \times (e_5 + e_{10}) = 0$ | Cayley-Dickson bilateral; antipodal partner of S1 (Lean 4-proved); magnitude-equal to S3B universally; K_Z kernel-degenerate with S5; Class B |
 | S5 | $(e_2 - e_{13}) \times (e_6 + e_9) = 0$ | Cayley-Dickson bilateral; K_Z kernel-degenerate with S4; Class A |
 
-These are not chosen arbitrarily. Their membership in the E8 Weyl orbit means they carry the symmetry structure of the most exceptional lattice in mathematics — a property that persists across Cayley-Dickson doublings from 16D through 256D and holds identically in both Cayley-Dickson and Clifford algebraic representations.
+These are not chosen arbitrarily. The exploratory E8 connection — still an active area of formal work — suggests they carry structure related to the most exceptional lattice in mathematics. Their bilateral zero divisor property, verified at 10⁻¹⁵ precision, does persist across Cayley-Dickson doublings from 16D through 256D and is independently confirmed in both Cayley-Dickson and Clifford algebraic representations.
 
 ---
 
@@ -87,11 +87,11 @@ CAILculator enforces a strict $\alpha \leq 5.0$ cap in `ChavezTransform.__init__
 
 A second formally verified result governs how gateway pairs interact with arbitrary inputs:
 
-**Theorem (scalar_channel):** Any linear combination of a gateway pair $(P, Q)$ always produces a scalar result under multiplication. That is, for any $\lambda, \mu \in \mathbb{R}$:
+**Theorem (scalar_channel):** For any scalars $a, b, c \in \mathbb{Q}$, the product of two elements drawn from the span of a gateway pair $(P, Q)$ — where the coefficient of $Q$ in the first factor matches the coefficient of $P$ in the second — always produces a rational scalar:
 
-$$(\lambda P + \mu Q) \times x \in \mathbb{R} \cdot e_0$$
+$$(aP + bQ) \times (bP + cQ) = (-2b(a + c)) \cdot e_0$$
 
-for appropriate inputs $x$. Structure collapses cleanly to the real channel — no spurious imaginary components are generated.
+All such products collapse cleanly to the real channel — no spurious imaginary components are generated at any dimensional stage. The scalar value $-2b(a+c)$ is computed explicitly in the companion `bilateral_collapse` theorem in `lean/BilateralCollapse.lean`.
 
 This theorem is the algebraic guarantee that the transform's filtering action is clean. Noise does not scatter into new imaginary dimensions; it collapses toward the scalar. This property is what makes the Chavez Transform useful as a structural detector rather than merely a high-dimensional projection.
 
@@ -122,7 +122,9 @@ Inputs that are structurally coherent — that carry genuine pattern — propaga
 
 ### For prime number theory and the Riemann Hypothesis
 
-The RHI profile maps Riemann zeros $\gamma_n$ and prime logarithms $\log p$ into the sedenion gateway structure. The empirical finding — confirmed across CAILculator Runs A through C — is that Riemann zeros on the critical line produce HIGH convergence scores (>0.8) across all six canonical gateways, while perturbed inputs do not. This is one of three independent standard-axiom characterizations of the critical line emerging from the CAIL-RH Investigation (Phases 1–74+).
+The RHI profile maps Riemann zeros $\gamma_n$ and prime logarithms $\log p$ into the sedenion gateway structure. The empirical finding — confirmed across CAILculator Runs A through C — is that Riemann zeros on the critical line produce HIGH convergence scores (>0.8) across all six canonical gateways, while perturbed inputs do not. This is a numerical observation, not a formal theorem.
+
+Separately, and not to be conflated with it, the CAIL-RH Investigation (Phases 1–74+) has developed three independent standard-axiom characterizations of the critical line in Lean 4: the energy-minimum, spectral-containment, and arithmetic-integrality routes. These are formally proved results; the HIGH-convergence empirical finding is a distinct, corroborating numerical observation.
 
 ### For investigative journalism
 
@@ -130,7 +132,7 @@ The Journalism profile applies the transform to public datasets — campaign fin
 
 ### For quantitative finance
 
-The Quant Equity profile uses the transform as the structural layer in a dual-method regime detection pipeline. The Chavez Transform stability score runs in parallel with a Hidden Markov Model baseline. Where both methods agree, confidence is high. Where they diverge, the disagreement is itself a signal — the data may be at a structural transition that statistical methods detect before algebraic ones, or vice versa.
+The Quant Equity profile uses the transform as the structural layer in regime analysis. The `analyze_dataset` tool runs a full three-layer pipeline: Chavez Transform stability scoring, pattern detection, and a ZDTP full cascade across all six gateways to 256D. The result is a regime classification — STABLE, TRANSITIONING, or SHIFTING — together with a convergence score and per-gateway magnitude breakdown. The tool accepts a close-price list or an OHLCV dict and requires a minimum of 16 data points.
 
 ---
 
@@ -145,7 +147,7 @@ The Quant Equity profile uses the transform as the structural layer in a dual-me
 ## Further Reading
 
 - **[ZDTP Protocol Specification](./zdtp_protocol.md)** — How the Chavez Transform's gateway structure extends to full 256D transmission via the Zero Divisor Transmission Protocol.
-- **[Project Glossary](./GLOSSARY.md)** — Definitions for sedenions, Chingons, Voudons, zero divisors, and all domain-specific terminology.
+- **[Project Glossary](./GLOSSARY.md)** — Definitions for sedenions, pathions, and higher-dimensional algebraic structures; zero divisors and all domain-specific terminology.
 - **Research DOI**: [10.5281/zenodo.17402495](https://doi.org/10.5281/zenodo.17402495) — *"Framework-Independent Zero Divisor Patterns in Higher-Dimensional Cayley-Dickson Algebras: Discovery and Verification of The Canonical Six"*
 - **Lean source**: [`lean/ChavezTransform_genuine.lean`](../lean/ChavezTransform_genuine.lean), [`lean/BilateralCollapse.lean`](../lean/BilateralCollapse.lean)
 
