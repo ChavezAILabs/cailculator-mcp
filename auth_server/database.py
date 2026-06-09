@@ -68,6 +68,10 @@ class User(Base):
     period_start_date = Column(DateTime, default=datetime.utcnow, nullable=False)
     period_end_date = Column(DateTime, nullable=True)
 
+    # Stripe subscription tracking
+    stripe_subscription_id = Column(String, nullable=True, index=True)
+    subscription_status = Column(String, nullable=True)  # active, canceled, past_due, unpaid; None = legacy/non-Stripe
+
     # Relationships
     api_keys = relationship("APIKey", back_populates="user")
     usage_logs = relationship("UsageLog", back_populates="user")
@@ -103,6 +107,14 @@ class SignupAttempt(Base):
     ip_address = Column(String, index=True, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     success = Column(Integer, default=0, nullable=False)  # 0=failed, 1=success
+
+class ProcessedStripeEvent(Base):
+    __tablename__ = "processed_stripe_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(String, unique=True, index=True, nullable=False)
+    event_type = Column(String, nullable=False)
+    processed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 # =============================================================================
 # DATABASE HELPERS

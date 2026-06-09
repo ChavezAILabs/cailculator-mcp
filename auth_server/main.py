@@ -28,7 +28,8 @@ from database import (
     APIKey,
     UsageLog,
     SubscriptionTier,
-    SignupAttempt
+    SignupAttempt,
+    ProcessedStripeEvent,
 )
 
 app = FastAPI(
@@ -708,6 +709,15 @@ async def validate(request: ValidateRequest, db: Session = Depends(get_db)):
             message="User not found"
         )
 
+    # Block revoked subscriptions; None means legacy/non-Stripe user (allow)
+    if user.subscription_status in ('canceled', 'unpaid'):
+        return ValidateResponse(
+            valid=False,
+            user_id=user.id,
+            tier=user.tier.value,
+            message=f"Subscription {user.subscription_status}"
+        )
+
     # Check rate limit
     is_allowed, usage_count, limit = check_rate_limit(key_hash, db)
 
@@ -865,6 +875,35 @@ async def startup():
                 ON users(verification_token)
             """))
 
+            conn.execute(text("""
+                ALTER TABLE users
+                ADD COLUMN IF NOT EXISTS stripe_subscription_id VARCHAR
+            """))
+
+            conn.execute(text("""
+                ALTER TABLE users
+                ADD COLUMN IF NOT EXISTS subscription_status VARCHAR
+            """))
+
+            conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS ix_users_stripe_subscription_id
+                ON users(stripe_subscription_id)
+            """))
+
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS processed_stripe_events (
+                    id SERIAL PRIMARY KEY,
+                    event_id VARCHAR UNIQUE NOT NULL,
+                    event_type VARCHAR NOT NULL,
+                    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+                )
+            """))
+
+            conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS ix_processed_stripe_events_event_id
+                ON processed_stripe_events(event_id)
+            """))
+
             conn.commit()
             print("✓ Database migrations completed")
     except Exception as e:
@@ -879,6 +918,18 @@ async def startup():
 async def shutdown():
     """Cleanup on shutdown"""
     print("Shutting down CAILculator Auth Server...")
+
+# =============================================================================
+# STRIPE HELPERS
+# =============================================================================
+
+def _mark_event_processed(event_id: str, event_type: str, db: Session) -> None:
+    """Record a processed Stripe event ID to prevent duplicate handling on retries."""
+    try:
+        db.add(ProcessedStripeEvent(event_id=event_id, event_type=event_type))
+        db.commit()
+    except Exception:
+        db.rollback()
 
 # =============================================================================
 # STRIPE CHECKOUT
@@ -937,121 +988,186 @@ async def success(request: Request, session_id: str):
 @app.post("/webhook/stripe")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     """
-    Handle Stripe webhooks for subscription events
+    Handle Stripe webhooks for subscription events.
+    Handles both paid and $0 (comped) checkouts via payment_status check.
+    API keys are stored in DB; manual email delivery required.
     """
     payload = await request.body()
     sig_header = request.headers.get('stripe-signature')
 
-    # Verify webhook signature for security
     try:
         if STRIPE_WEBHOOK_SECRET:
             event = stripe.Webhook.construct_event(
                 payload, sig_header, STRIPE_WEBHOOK_SECRET
             )
         else:
-            # Fallback for development (not recommended for production)
             import json
             event = stripe.Event.construct_from(
                 json.loads(payload.decode('utf-8')), stripe.api_key
             )
             print("WARNING: STRIPE_WEBHOOK_SECRET not set, webhook signature not verified")
     except ValueError as e:
-        # Invalid payload
         print(f"Invalid webhook payload: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid payload")
     except stripe.error.SignatureVerificationError as e:
-        # Invalid signature
         print(f"Invalid webhook signature: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    # Handle successful subscription creation
-    if event['type'] == 'checkout.session.completed':
-        print(f"📥 Received event: checkout.session.completed")
+    event_id = event['id']
+    event_type = event['type']
+    print(f"📥 Stripe event: {event_type} ({event_id})")
+
+    # Idempotency: skip events already handled (covers webhook retries)
+    if db.query(ProcessedStripeEvent).filter(
+        ProcessedStripeEvent.event_id == event_id
+    ).first():
+        print(f"   ⏭️  Already processed — skipping")
+        return {"status": "already_processed"}
+
+    # ------------------------------------------------------------------
+    # checkout.session.completed
+    # Fires for both paid ($) and $0 (no_payment_required / comped) signups.
+    # This is the provisioning entry point for ALL new subscribers.
+    # ------------------------------------------------------------------
+    if event_type == 'checkout.session.completed':
         session = event['data']['object']
+        payment_status = session.get('payment_status', '')
 
-        # Get customer email
-        customer_email = session.get('customer_email') or session.get('customer_details', {}).get('email')
+        # Guard: only provision for paid or $0-comped checkouts
+        if payment_status not in ('paid', 'no_payment_required'):
+            print(f"   ⚠️  payment_status={payment_status!r} — skipping provisioning")
+            _mark_event_processed(event_id, event_type, db)
+            return {"status": "skipped"}
+
+        customer_email = (
+            session.get('customer_email')
+            or session.get('customer_details', {}).get('email')
+        )
         customer_name = session.get('customer_details', {}).get('name')
-        print(f"   Customer: {customer_email} ({customer_name})")
-
-        # Map price ID to tier (LIVE STRIPE PRICES - updated 2025-10-29)
         subscription_id = session.get('subscription')
-        tier = 'individual'  # Default
+        session_id = session.get('id')
 
+        print(f"   Customer     : {customer_email}")
+        print(f"   payment_status: {payment_status}")
+
+        tier = 'individual'
         if subscription_id:
             try:
                 subscription = stripe.Subscription.retrieve(subscription_id)
                 price_id = subscription['items']['data'][0]['price']['id']
-                print(f"   Subscription ID: {subscription_id}")
-                print(f"   Price ID: {price_id}")
-
-                # Map live Stripe price IDs to tiers
                 price_to_tier = {
-                    "price_1Tdyrt2NNm10BnLCMe5wP9XN": "individual",   # $50/month
-                    "price_1Tdyl42NNm10BnLCRgqZQnUF": "journalist",   # $75/month
-                    "price_1TdyvL2NNm10BnLC5704Cv5U": "academic",     # $100/month
-                    "price_1TdyxN2NNm10BnLCI9XjeRNt": "commercial",   # $250/month
-                    "price_1SQGie2NNm10BnLCyraRcDSA": "quant_explorer",      # $599/month
-                    "price_1SXDc82NNm10BnLC36hwqnaA": "quant_professional",  # $1,499/month
-                    "price_1SQGox2NNm10BnLCcROJSo91": "quant_elite"          # $3,499/month
+                    "price_1Tdyrt2NNm10BnLCMe5wP9XN": "individual",
+                    "price_1Tdyl42NNm10BnLCRgqZQnUF": "journalist",
+                    "price_1TdyvL2NNm10BnLC5704Cv5U": "academic",
+                    "price_1TdyxN2NNm10BnLCI9XjeRNt": "commercial",
+                    "price_1SQGie2NNm10BnLCyraRcDSA": "quant_explorer",
+                    "price_1SXDc82NNm10BnLC36hwqnaA": "quant_professional",
+                    "price_1SQGox2NNm10BnLCcROJSo91": "quant_elite",
                 }
-
                 tier = price_to_tier.get(price_id, 'individual')
-                print(f"   Mapped to tier: {tier}")
+                print(f"   Tier         : {tier}")
+                print(f"   Subscription : {subscription_id}")
             except Exception as e:
-                print(f"❌ Error getting subscription tier: {e}")
-                tier = 'individual'
+                print(f"❌ Error resolving tier: {e}")
         else:
-            print(f"⚠️  No subscription ID in session")
+            print("⚠️  No subscription ID in session")
 
-        if customer_email:
-            # Check if user already exists
-            existing_user = db.query(User).filter(User.email == customer_email).first()
+        if not customer_email:
+            print("❌ No customer email in event — cannot provision key")
+            _mark_event_processed(event_id, event_type, db)
+            return {"status": "no_email"}
 
-            if existing_user:
-                print(f"⚠️  User already exists: {customer_email}")
-                # Generate new API key for existing user
-                api_key_plain = f"cail_{tier}_{secrets.token_urlsafe(20)}"
-                api_key_hash = hashlib.sha256(api_key_plain.encode()).hexdigest()
+        existing_user = db.query(User).filter(User.email == customer_email).first()
+        if existing_user:
+            existing_user.tier = SubscriptionTier(tier)
+            existing_user.stripe_subscription_id = subscription_id
+            existing_user.subscription_status = 'active'
+            existing_user.email_verified = 1
+            db.commit()
+            target_user = existing_user
+        else:
+            target_user = User(
+                email=customer_email,
+                name=customer_name or customer_email.split('@')[0],
+                tier=SubscriptionTier(tier),
+                email_verified=1,
+                stripe_subscription_id=subscription_id,
+                subscription_status='active',
+            )
+            db.add(target_user)
+            db.commit()
+            db.refresh(target_user)
 
-                api_key_record = APIKey(
-                    user_id=existing_user.id,
-                    key_hash=api_key_hash
-                )
-                db.add(api_key_record)
+        api_key_plain = f"cail_{tier}_{secrets.token_urlsafe(20)}"
+        api_key_hash = hashlib.sha256(api_key_plain.encode()).hexdigest()
+        db.add(APIKey(user_id=target_user.id, key_hash=api_key_hash))
+        db.commit()
+
+        # ── ACTION REQUIRED LOG ────────────────────────────────────────
+        # Railway log alert pattern: "ACTION REQUIRED"
+        print("=" * 56)
+        print("✅ ACTION REQUIRED — SEND API KEY MANUALLY")
+        print(f"   To      : {customer_email}")
+        print(f"   Name    : {customer_name or '(not provided)'}")
+        print(f"   Tier    : {tier}")
+        print(f"   API Key : {api_key_plain}")
+        print(f"   Session : {session_id}")
+        print("=" * 56)
+
+        _mark_event_processed(event_id, event_type, db)
+
+    # ------------------------------------------------------------------
+    # invoice.paid
+    # Fires on every renewal, including recurring $0 comps.
+    # Keeps access alive for journalist/comped tier each billing cycle.
+    # ------------------------------------------------------------------
+    elif event_type == 'invoice.paid':
+        invoice = event['data']['object']
+        subscription_id = invoice.get('subscription')
+        if subscription_id:
+            user = db.query(User).filter(
+                User.stripe_subscription_id == subscription_id
+            ).first()
+            if user:
+                user.subscription_status = 'active'
                 db.commit()
-                print(f"✅ Generated new API key for existing user")
-                print(f"✅ DB STORED - existing user key for {customer_email}: {api_key_plain}")
+                print(f"✅ invoice.paid: access confirmed for {user.email}")
             else:
-                # Create user
-                print(f"   Creating new user...")
-                user = User(
-                    email=customer_email,
-                    name=customer_name or customer_email.split('@')[0],
-                    tier=SubscriptionTier(tier)
-                )
-                db.add(user)
+                print(f"⚠️  invoice.paid: no user found for subscription {subscription_id}")
+        _mark_event_processed(event_id, event_type, db)
+
+    # ------------------------------------------------------------------
+    # customer.subscription.deleted — revoke access on cancellation
+    # ------------------------------------------------------------------
+    elif event_type == 'customer.subscription.deleted':
+        subscription = event['data']['object']
+        subscription_id = subscription.get('id')
+        if subscription_id:
+            user = db.query(User).filter(
+                User.stripe_subscription_id == subscription_id
+            ).first()
+            if user:
+                user.subscription_status = 'canceled'
                 db.commit()
-                db.refresh(user)
-                print(f"✅ Created user: {customer_email}")
+                print(f"✅ subscription.deleted: access revoked for {user.email}")
+        _mark_event_processed(event_id, event_type, db)
 
-                # Generate API key
-                api_key_plain = f"cail_{tier}_{secrets.token_urlsafe(20)}"
-                api_key_hash = hashlib.sha256(api_key_plain.encode()).hexdigest()
-
-                api_key_record = APIKey(
-                    user_id=user.id,
-                    key_hash=api_key_hash
-                )
-                db.add(api_key_record)
+    # ------------------------------------------------------------------
+    # customer.subscription.updated — sync status (past_due, unpaid, etc.)
+    # ------------------------------------------------------------------
+    elif event_type == 'customer.subscription.updated':
+        subscription = event['data']['object']
+        subscription_id = subscription.get('id')
+        status = subscription.get('status')
+        if subscription_id and status:
+            user = db.query(User).filter(
+                User.stripe_subscription_id == subscription_id
+            ).first()
+            if user:
+                user.subscription_status = status
                 db.commit()
-                print(f"✅ Generated API key")
-                print(f"✅ DB STORED - new user key for {customer_email}: {api_key_plain}")
-
-            # SendGrid email disabled - retrieve keys from logs and send manually
-            # send_api_key_email(customer_email, api_key_plain, tier, customer_name)
-            print(f"✅ Complete! API key stored in DB. Manual email delivery needed.")
-            print(f"   Customer: {customer_email} | Tier: {tier} | Key: {api_key_plain}")
+                print(f"✅ subscription.updated: status={status!r} for {user.email}")
+        _mark_event_processed(event_id, event_type, db)
 
     return {"status": "success"}
 
