@@ -1031,7 +1031,9 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     # ------------------------------------------------------------------
     if event_type == 'checkout.session.completed':
         session = event['data']['object']
-        payment_status = session.get('payment_status', '')
+        # Use getattr throughout — newer Stripe SDK (v5+) StripeObjects don't
+        # support .get(); calling .get() triggers __getattr__ → KeyError: 'get'
+        payment_status = getattr(session, 'payment_status', '') or ''
 
         # Guard: only provision for paid or $0-comped checkouts
         if payment_status not in ('paid', 'no_payment_required'):
@@ -1039,13 +1041,13 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
             _mark_event_processed(event_id, event_type, db)
             return {"status": "skipped"}
 
-        customer_email = (
-            session.get('customer_email')
-            or session.get('customer_details', {}).get('email')
+        customer_details = getattr(session, 'customer_details', None)
+        customer_email = getattr(session, 'customer_email', None) or (
+            getattr(customer_details, 'email', None) if customer_details else None
         )
-        customer_name = session.get('customer_details', {}).get('name')
-        subscription_id = session.get('subscription')
-        session_id = session.get('id')
+        customer_name = getattr(customer_details, 'name', None) if customer_details else None
+        subscription_id = getattr(session, 'subscription', None)
+        session_id = getattr(session, 'id', None)
 
         print(f"   Customer     : {customer_email}")
         print(f"   payment_status: {payment_status}")
@@ -1123,7 +1125,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     # ------------------------------------------------------------------
     elif event_type == 'invoice.paid':
         invoice = event['data']['object']
-        subscription_id = invoice.get('subscription')
+        subscription_id = getattr(invoice, 'subscription', None)
         if subscription_id:
             user = db.query(User).filter(
                 User.stripe_subscription_id == subscription_id
@@ -1141,7 +1143,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     # ------------------------------------------------------------------
     elif event_type == 'customer.subscription.deleted':
         subscription = event['data']['object']
-        subscription_id = subscription.get('id')
+        subscription_id = getattr(subscription, 'id', None)
         if subscription_id:
             user = db.query(User).filter(
                 User.stripe_subscription_id == subscription_id
@@ -1157,8 +1159,8 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     # ------------------------------------------------------------------
     elif event_type == 'customer.subscription.updated':
         subscription = event['data']['object']
-        subscription_id = subscription.get('id')
-        status = subscription.get('status')
+        subscription_id = getattr(subscription, 'id', None)
+        status = getattr(subscription, 'status', None)
         if subscription_id and status:
             user = db.query(User).filter(
                 User.stripe_subscription_id == subscription_id
