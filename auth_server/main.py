@@ -923,6 +923,24 @@ async def shutdown():
 # STRIPE HELPERS
 # =============================================================================
 
+def safe_get(obj, key, default=None):
+    """
+    Safely get attribute or key from a StripeObject.
+    Newer Stripe SDKs (v5+) raise KeyError from __getattr__ for missing keys,
+    which standard getattr() does NOT catch.
+    """
+    if obj is None:
+        return default
+    try:
+        # Try dict-style access first (most reliable for StripeObject data)
+        return obj[key]
+    except (KeyError, TypeError):
+        try:
+            # Fall back to attribute access; catch both potential exceptions
+            return getattr(obj, key, default)
+        except (AttributeError, KeyError):
+            return default
+
 def _mark_event_processed(event_id: str, event_type: str, db: Session) -> None:
     """Record a processed Stripe event ID to prevent duplicate handling on retries."""
     try:
@@ -1024,154 +1042,163 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         print(f"   ⏭️  Already processed — skipping")
         return {"status": "already_processed"}
 
-    # ------------------------------------------------------------------
-    # checkout.session.completed
-    # Fires for both paid ($) and $0 (no_payment_required / comped) signups.
-    # This is the provisioning entry point for ALL new subscribers.
-    # ------------------------------------------------------------------
-    if event_type == 'checkout.session.completed':
-        session = event['data']['object']
-        # Use getattr throughout — newer Stripe SDK (v5+) StripeObjects don't
-        # support .get(); calling .get() triggers __getattr__ → KeyError: 'get'
-        payment_status = getattr(session, 'payment_status', '') or ''
+    try:
+        # ------------------------------------------------------------------
+        # checkout.session.completed
+        # Fires for both paid ($) and $0 (no_payment_required / comped) signups.
+        # This is the provisioning entry point for ALL new subscribers.
+        # ------------------------------------------------------------------
+        if event_type == 'checkout.session.completed':
+            session = event['data']['object']
+            # Use safe_get — newer Stripe SDK (v5+) StripeObjects raise KeyError
+            # from __getattr__ for missing keys, which getattr() doesn't catch.
+            payment_status = safe_get(session, 'payment_status', '') or ''
 
-        # Guard: only provision for paid or $0-comped checkouts
-        if payment_status not in ('paid', 'no_payment_required'):
-            print(f"   ⚠️  payment_status={payment_status!r} — skipping provisioning")
-            _mark_event_processed(event_id, event_type, db)
-            return {"status": "skipped"}
+            # Guard: only provision for paid or $0-comped checkouts
+            if payment_status not in ('paid', 'no_payment_required'):
+                print(f"   ⚠️  payment_status={payment_status!r} — skipping provisioning")
+                _mark_event_processed(event_id, event_type, db)
+                return {"status": "skipped"}
 
-        customer_details = getattr(session, 'customer_details', None)
-        customer_email = getattr(session, 'customer_email', None) or (
-            getattr(customer_details, 'email', None) if customer_details else None
-        )
-        customer_name = getattr(customer_details, 'name', None) if customer_details else None
-        subscription_id = getattr(session, 'subscription', None)
-        session_id = getattr(session, 'id', None)
-
-        print(f"   Customer     : {customer_email}")
-        print(f"   payment_status: {payment_status}")
-
-        tier = 'individual'
-        if subscription_id:
-            try:
-                subscription = stripe.Subscription.retrieve(subscription_id)
-                price_id = subscription['items']['data'][0]['price']['id']
-                price_to_tier = {
-                    "price_1Tdyrt2NNm10BnLCMe5wP9XN": "individual",
-                    "price_1Tdyl42NNm10BnLCRgqZQnUF": "journalist",
-                    "price_1TdyvL2NNm10BnLC5704Cv5U": "academic",
-                    "price_1TdyxN2NNm10BnLCI9XjeRNt": "commercial",
-                    "price_1SQGie2NNm10BnLCyraRcDSA": "quant_explorer",
-                    "price_1SXDc82NNm10BnLC36hwqnaA": "quant_professional",
-                    "price_1SQGox2NNm10BnLCcROJSo91": "quant_elite",
-                }
-                tier = price_to_tier.get(price_id, 'individual')
-                print(f"   Tier         : {tier}")
-                print(f"   Subscription : {subscription_id}")
-            except Exception as e:
-                print(f"❌ Error resolving tier: {e}")
-        else:
-            print("⚠️  No subscription ID in session")
-
-        if not customer_email:
-            print("❌ No customer email in event — cannot provision key")
-            _mark_event_processed(event_id, event_type, db)
-            return {"status": "no_email"}
-
-        existing_user = db.query(User).filter(User.email == customer_email).first()
-        if existing_user:
-            existing_user.tier = SubscriptionTier(tier)
-            existing_user.stripe_subscription_id = subscription_id
-            existing_user.subscription_status = 'active'
-            existing_user.email_verified = 1
-            db.commit()
-            target_user = existing_user
-        else:
-            target_user = User(
-                email=customer_email,
-                name=customer_name or customer_email.split('@')[0],
-                tier=SubscriptionTier(tier),
-                email_verified=1,
-                stripe_subscription_id=subscription_id,
-                subscription_status='active',
+            customer_details = safe_get(session, 'customer_details', None)
+            customer_email = safe_get(session, 'customer_email', None) or (
+                safe_get(customer_details, 'email', None) if customer_details else None
             )
-            db.add(target_user)
-            db.commit()
-            db.refresh(target_user)
+            customer_name = safe_get(customer_details, 'name', None) if customer_details else None
+            subscription_id = safe_get(session, 'subscription', None)
+            session_id = safe_get(session, 'id', None)
 
-        api_key_plain = f"cail_{tier}_{secrets.token_urlsafe(20)}"
-        api_key_hash = hashlib.sha256(api_key_plain.encode()).hexdigest()
-        db.add(APIKey(user_id=target_user.id, key_hash=api_key_hash))
-        db.commit()
+            print(f"   Customer     : {customer_email}")
+            print(f"   payment_status: {payment_status}")
 
-        # ── ACTION REQUIRED LOG ────────────────────────────────────────
-        # Railway log alert pattern: "ACTION REQUIRED"
-        print("=" * 56)
-        print("✅ ACTION REQUIRED — SEND API KEY MANUALLY")
-        print(f"   To      : {customer_email}")
-        print(f"   Name    : {customer_name or '(not provided)'}")
-        print(f"   Tier    : {tier}")
-        print(f"   API Key : {api_key_plain}")
-        print(f"   Session : {session_id}")
-        print("=" * 56)
-
-        _mark_event_processed(event_id, event_type, db)
-
-    # ------------------------------------------------------------------
-    # invoice.paid
-    # Fires on every renewal, including recurring $0 comps.
-    # Keeps access alive for journalist/comped tier each billing cycle.
-    # ------------------------------------------------------------------
-    elif event_type == 'invoice.paid':
-        invoice = event['data']['object']
-        subscription_id = getattr(invoice, 'subscription', None)
-        if subscription_id:
-            user = db.query(User).filter(
-                User.stripe_subscription_id == subscription_id
-            ).first()
-            if user:
-                user.subscription_status = 'active'
-                db.commit()
-                print(f"✅ invoice.paid: access confirmed for {user.email}")
+            tier = 'individual'
+            if subscription_id:
+                try:
+                    subscription = stripe.Subscription.retrieve(subscription_id)
+                    price_id = subscription['items']['data'][0]['price']['id']
+                    price_to_tier = {
+                        "price_1Tdyrt2NNm10BnLCMe5wP9XN": "individual",
+                        "price_1Tdyl42NNm10BnLCRgqZQnUF": "journalist",
+                        "price_1TdyvL2NNm10BnLC5704Cv5U": "academic",
+                        "price_1TdyxN2NNm10BnLCI9XjeRNt": "commercial",
+                        "price_1SQGie2NNm10BnLCyraRcDSA": "quant_explorer",
+                        "price_1SXDc82NNm10BnLC36hwqnaA": "quant_professional",
+                        "price_1SQGox2NNm10BnLCcROJSo91": "quant_elite",
+                    }
+                    tier = price_to_tier.get(price_id, 'individual')
+                    print(f"   Tier         : {tier}")
+                    print(f"   Subscription : {subscription_id}")
+                except Exception as e:
+                    print(f"❌ Error resolving tier: {e}")
             else:
-                print(f"⚠️  invoice.paid: no user found for subscription {subscription_id}")
-        _mark_event_processed(event_id, event_type, db)
+                print("⚠️  No subscription ID in session")
 
-    # ------------------------------------------------------------------
-    # customer.subscription.deleted — revoke access on cancellation
-    # ------------------------------------------------------------------
-    elif event_type == 'customer.subscription.deleted':
-        subscription = event['data']['object']
-        subscription_id = getattr(subscription, 'id', None)
-        if subscription_id:
-            user = db.query(User).filter(
-                User.stripe_subscription_id == subscription_id
-            ).first()
-            if user:
-                user.subscription_status = 'canceled'
+            if not customer_email:
+                print("❌ No customer email in event — cannot provision key")
+                _mark_event_processed(event_id, event_type, db)
+                return {"status": "no_email"}
+
+            existing_user = db.query(User).filter(User.email == customer_email).first()
+            if existing_user:
+                existing_user.tier = SubscriptionTier(tier)
+                existing_user.stripe_subscription_id = subscription_id
+                existing_user.subscription_status = 'active'
+                existing_user.email_verified = 1
                 db.commit()
-                print(f"✅ subscription.deleted: access revoked for {user.email}")
-        _mark_event_processed(event_id, event_type, db)
-
-    # ------------------------------------------------------------------
-    # customer.subscription.updated — sync status (past_due, unpaid, etc.)
-    # ------------------------------------------------------------------
-    elif event_type == 'customer.subscription.updated':
-        subscription = event['data']['object']
-        subscription_id = getattr(subscription, 'id', None)
-        status = getattr(subscription, 'status', None)
-        if subscription_id and status:
-            user = db.query(User).filter(
-                User.stripe_subscription_id == subscription_id
-            ).first()
-            if user:
-                user.subscription_status = status
+                target_user = existing_user
+            else:
+                target_user = User(
+                    email=customer_email,
+                    name=customer_name or customer_email.split('@')[0],
+                    tier=SubscriptionTier(tier),
+                    email_verified=1,
+                    stripe_subscription_id=subscription_id,
+                    subscription_status='active',
+                )
+                db.add(target_user)
                 db.commit()
-                print(f"✅ subscription.updated: status={status!r} for {user.email}")
-        _mark_event_processed(event_id, event_type, db)
+                db.refresh(target_user)
 
-    return {"status": "success"}
+            api_key_plain = f"cail_{tier}_{secrets.token_urlsafe(20)}"
+            api_key_hash = hashlib.sha256(api_key_plain.encode()).hexdigest()
+            db.add(APIKey(user_id=target_user.id, key_hash=api_key_hash))
+            db.commit()
+
+            # ── ACTION REQUIRED LOG ────────────────────────────────────────
+            # Railway log alert pattern: "ACTION REQUIRED"
+            print("=" * 56)
+            print("✅ ACTION REQUIRED — SEND API KEY MANUALLY")
+            print(f"   To      : {customer_email}")
+            print(f"   Name    : {customer_name or '(not provided)'}")
+            print(f"   Tier    : {tier}")
+            print(f"   API Key : {api_key_plain}")
+            print(f"   Session : {session_id}")
+            print("=" * 56)
+
+            _mark_event_processed(event_id, event_type, db)
+
+        # ------------------------------------------------------------------
+        # invoice.paid
+        # Fires on every renewal, including recurring $0 comps.
+        # Keeps access alive for journalist/comped tier each billing cycle.
+        # ------------------------------------------------------------------
+        elif event_type == 'invoice.paid':
+            invoice = event['data']['object']
+            subscription_id = safe_get(invoice, 'subscription', None)
+            if subscription_id:
+                user = db.query(User).filter(
+                    User.stripe_subscription_id == subscription_id
+                ).first()
+                if user:
+                    user.subscription_status = 'active'
+                    db.commit()
+                    print(f"✅ invoice.paid: access confirmed for {user.email}")
+                else:
+                    print(f"⚠️  invoice.paid: no user found for subscription {subscription_id}")
+            _mark_event_processed(event_id, event_type, db)
+
+        # ------------------------------------------------------------------
+        # customer.subscription.deleted — revoke access on cancellation
+        # ------------------------------------------------------------------
+        elif event_type == 'customer.subscription.deleted':
+            subscription = event['data']['object']
+            subscription_id = safe_get(subscription, 'id', None)
+            if subscription_id:
+                user = db.query(User).filter(
+                    User.stripe_subscription_id == subscription_id
+                ).first()
+                if user:
+                    user.subscription_status = 'canceled'
+                    db.commit()
+                    print(f"✅ subscription.deleted: access revoked for {user.email}")
+            _mark_event_processed(event_id, event_type, db)
+
+        # ------------------------------------------------------------------
+        # customer.subscription.updated — sync status (past_due, unpaid, etc.)
+        # ------------------------------------------------------------------
+        elif event_type == 'customer.subscription.updated':
+            subscription = event['data']['object']
+            subscription_id = safe_get(subscription, 'id', None)
+            status = safe_get(subscription, 'status', None)
+            if subscription_id and status:
+                user = db.query(User).filter(
+                    User.stripe_subscription_id == subscription_id
+                ).first()
+                if user:
+                    user.subscription_status = status
+                    db.commit()
+                    print(f"✅ subscription.updated: status={status!r} for {user.email}")
+            _mark_event_processed(event_id, event_type, db)
+
+        return {"status": "success"}
+
+    except Exception as e:
+        import traceback
+        print(f"❌ WEBHOOK CRASH: {e}")
+        traceback.print_exc()
+        # Raise 500 to tell Stripe we failed; they will retry.
+        # This gives us a chance to fix bugs without losing data.
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 if __name__ == "__main__":
     import uvicorn
