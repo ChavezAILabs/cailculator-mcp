@@ -821,9 +821,6 @@ async def startup():
         from sqlalchemy import text
         from database import engine
         with engine.connect() as conn:
-            # Add missing columns if they don't exist
-            print("Running database migrations...")
-
             # Force database reset if RESET_DATABASE env var is set
             reset_db = os.getenv("RESET_DATABASE", "false").lower() == "true"
             if reset_db:
@@ -840,71 +837,48 @@ async def startup():
                     print(f"Reset error: {str(reset_error)}")
                     conn.rollback()
 
-            conn.execute(text("""
-                ALTER TABLE users
-                ADD COLUMN IF NOT EXISTS email_verified INTEGER DEFAULT 0 NOT NULL
-            """))
+            print("Running database migrations...")
+            
+            migrations = [
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified INTEGER DEFAULT 0 NOT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires TIMESTAMP",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS country_code VARCHAR(2)",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_ip VARCHAR",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS requires_manual_approval INTEGER DEFAULT 0 NOT NULL",
+                "CREATE INDEX IF NOT EXISTS ix_users_verification_token ON users(verification_token)",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id VARCHAR",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status VARCHAR",
+                "CREATE INDEX IF NOT EXISTS ix_users_stripe_subscription_id ON users(stripe_subscription_id)",
+                "CREATE TABLE IF NOT EXISTS processed_stripe_events (id SERIAL PRIMARY KEY, event_id VARCHAR UNIQUE NOT NULL, event_type VARCHAR NOT NULL, processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL)",
+                "CREATE INDEX IF NOT EXISTS ix_processed_stripe_events_event_id ON processed_stripe_events(event_id)",
+                # Ensure all Enum values exist in PostgreSQL type
+                "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'individual'",
+                "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'journalist'",
+                "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'academic'",
+                "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'commercial'",
+                "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'enterprise'",
+                "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'quant_explorer'",
+                "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'quant_professional'",
+                "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'quant_elite'",
+                # Rate limiting columns
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS request_count_current_period INTEGER DEFAULT 0 NOT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS period_start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL",
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS period_end_date TIMESTAMP"
+            ]
 
-            conn.execute(text("""
-                ALTER TABLE users
-                ADD COLUMN IF NOT EXISTS verification_token VARCHAR
-            """))
+            for m in migrations:
+                try:
+                    conn.execute(text(m))
+                    conn.commit()
+                except Exception as e:
+                    conn.rollback()
+                    # Some migrations might fail if type/column already exists but IF NOT EXISTS isn't supported for that syntax
+                    # or if ALTER TYPE ADD VALUE is called in a way the DB doesn't like. 
+                    # We continue to the next one.
+                    if "already exists" not in str(e).lower():
+                        print(f"  Migration hint: {m[:40]}... -> {str(e)[:100]}")
 
-            conn.execute(text("""
-                ALTER TABLE users
-                ADD COLUMN IF NOT EXISTS verification_token_expires TIMESTAMP
-            """))
-
-            conn.execute(text("""
-                ALTER TABLE users
-                ADD COLUMN IF NOT EXISTS country_code VARCHAR(2)
-            """))
-
-            conn.execute(text("""
-                ALTER TABLE users
-                ADD COLUMN IF NOT EXISTS signup_ip VARCHAR
-            """))
-
-            conn.execute(text("""
-                ALTER TABLE users
-                ADD COLUMN IF NOT EXISTS requires_manual_approval INTEGER DEFAULT 0 NOT NULL
-            """))
-
-            conn.execute(text("""
-                CREATE INDEX IF NOT EXISTS ix_users_verification_token
-                ON users(verification_token)
-            """))
-
-            conn.execute(text("""
-                ALTER TABLE users
-                ADD COLUMN IF NOT EXISTS stripe_subscription_id VARCHAR
-            """))
-
-            conn.execute(text("""
-                ALTER TABLE users
-                ADD COLUMN IF NOT EXISTS subscription_status VARCHAR
-            """))
-
-            conn.execute(text("""
-                CREATE INDEX IF NOT EXISTS ix_users_stripe_subscription_id
-                ON users(stripe_subscription_id)
-            """))
-
-            conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS processed_stripe_events (
-                    id SERIAL PRIMARY KEY,
-                    event_id VARCHAR UNIQUE NOT NULL,
-                    event_type VARCHAR NOT NULL,
-                    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-                )
-            """))
-
-            conn.execute(text("""
-                CREATE INDEX IF NOT EXISTS ix_processed_stripe_events_event_id
-                ON processed_stripe_events(event_id)
-            """))
-
-            conn.commit()
             print("✓ Database migrations completed")
     except Exception as e:
         print(f"Migration warning: {str(e)}")
