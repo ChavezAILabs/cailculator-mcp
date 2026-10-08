@@ -1,0 +1,21 @@
+{
+  "id": "journalism_edge_3_points",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": [
+      100.0,
+      101.0,
+      99.0
+    ],
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "edge case (handoff 3B)",
+  "notes": "Too short.",
+  "profile": "journalism",
+  "expected": {
+    "success": false,
+    "error": "Minimum 16 data points required, got 3"
+  },
+  "expected_input_hash": "sha256:a3829664cf32b267d7ea2350016e5f3b06455a5809409738436c4e19cb72ea08"
+}

@@ -180,7 +180,7 @@ class MCPServer:
             }
         
         # Validate API key with auth server
-        is_valid, error_message = await get_auth().validate_api_key(api_key)
+        is_valid, error_message, plan = await get_auth().validate_api_key(api_key)
         
         if not is_valid:
             logger.error(f"API key validation failed: {error_message}")
@@ -196,7 +196,7 @@ class MCPServer:
         
         # Execute the tool
         try:
-            result = await get_tools().call_tool(tool_name, arguments)
+            result = await get_tools().call_tool(tool_name, arguments, plan=plan)
             
             # Extract image data if present
             image_data = result.pop("image_data", None)
@@ -219,7 +219,8 @@ class MCPServer:
                         "Key metrics and summary provided below."
                     ),
                     "tool": tool_name,
-                    "summary": self._create_summary(result)
+                    "summary": self._create_summary(result),
+                    "provenance": result.get("provenance"),
                 }
                 result_json = json.dumps(truncated_result, indent=2)
             

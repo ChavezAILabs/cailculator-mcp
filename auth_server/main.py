@@ -65,6 +65,26 @@ STRIPE_PRICES = {
     # Enterprise and Quant Enterprise are custom pricing (contact sales)
 }
 
+# Domain profiles included in each plan. Must match PLAN_PROFILES in
+# src/cailculator_mcp/plans.py (checked by tests/golden/test_access.py).
+PLAN_PROFILES = {
+    "individual": ["general_data", "developer_v1"],
+    "journalist": ["journalism", "general_data", "developer_v1"],
+    "academic": ["general_data", "developer_v1"],
+    "quant_explorer": ["quant_equity", "general_data", "developer_v1"],
+    "quant_professional": ["quant_equity", "general_data", "developer_v1"],
+    "quant_elite": ["quant_equity", "general_data", "developer_v1"],
+    "commercial": ["general_data", "journalism", "quant_equity", "developer_v1"],
+    "enterprise": ["general_data", "journalism", "quant_equity", "developer_v1"],
+}
+
+PROFILE_DESCRIPTIONS = {
+    "general_data": "General Data - general-purpose numerical structure analysis",
+    "journalism": "Journalism - measured structural quantities for public-records data",
+    "quant_equity": "Quant Equity - market regime analysis from price / OHLCV data",
+    "developer_v1": "Developer - template for building a custom profile",
+}
+
 # Monthly request limits by tier
 TIER_LIMITS = {
     "individual": 25000,
@@ -382,6 +402,10 @@ def send_api_key_email(email: str, api_key: str, tier: str, customer_name: str =
         "quant_elite": "Quant Elite"
     }
     tier_display = tier_names.get(tier, tier.replace('_', ' ').title())
+    profile_lines = "\n".join(
+        f"- {PROFILE_DESCRIPTIONS.get(p, p)}" for p in PLAN_PROFILES.get(tier, ["general_data"]))
+    limit = TIER_LIMITS.get(tier)
+    limit_display = "Unlimited" if limit is not None and limit < 0 else (f"{limit:,}" if limit else "See your plan")
 
     # Email body
     body = f"""
@@ -420,12 +444,19 @@ To get started:
 Documentation: https://github.com/ChavezAILabs/cailculator-mcp
 Support: iknowpi@gmail.com
 
-Features included in your {tier_display} plan:
-- All 5 MCP tools (compute, transform, patterns, analysis, visualizations)
-- Dual framework support (Cayley-Dickson + Clifford)
-- 16D-256D dimensional range
-- Chavez Transform data analysis
-- Canonical Six pattern detection
+Your {tier_display} plan includes:
+
+Domain profiles:
+{profile_lines}
+
+Monthly requests: {limit_display}
+
+Every plan includes all CAILculator tools: high-dimensional algebra
+(Cayley-Dickson and Clifford, 16D-256D), the bilateral zero-divisor oracle,
+Chavez Transform, pattern detection, ZDTP transmission, dataset analysis,
+E8 orbit mapping, and visualizations. Tools that take a profile use the
+profiles listed above; every response states which profile and version
+produced it. To add profiles, upgrade your plan.
 
 Better math, less suffering.
 

@@ -1,0 +1,17 @@
+{
+  "id": "journalism_edge_not_a_list",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": "1,2,3",
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "edge case (handoff 3B)",
+  "notes": "String instead of array.",
+  "profile": "journalism",
+  "expected": {
+    "success": false,
+    "error": "data must be a list of numbers or a dict with a 'close' key"
+  },
+  "expected_input_hash": "sha256:4f84e41448458e1274c47056790cf8ca95c95316b1412da36e79d3b2f5c11723"
+}

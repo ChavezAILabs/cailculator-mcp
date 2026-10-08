@@ -156,17 +156,28 @@ class PatternDetector:
             return patterns
 
         norm = float(np.linalg.norm(d)) + 1e-15
+        flipped = d[::-1]
+
+        # Conjugate, bilateral and cyclic symmetry are scored on deviations from the mean.
+        # Scored on raw values, a series' level dominates the norm: iid noise around 500
+        # scored ~85% "palindromic" and flagged 100% of G3 null series (2.2.0 gate run).
+        # A constant offset is palindromic and periodic for every period, so subtracting
+        # it changes no true pattern's score. A constant series has no deviations to
+        # compare and is left to the sequence detectors.
+        c = d - float(np.mean(d))
+        c_flipped = c[::-1]
+        c_norm = float(np.linalg.norm(c))
+        has_variation = c_norm > 1e-12 * max(1.0, norm)
 
         # ── 1. Conjugate (palindromic) symmetry ──────────────────────────────
-        flipped = d[::-1]
-        diff_conj = float(np.linalg.norm(d - flipped))
-        conf_conj = max(0.0, 1.0 - diff_conj / norm)
+        diff_conj = float(np.linalg.norm(c - c_flipped))
+        conf_conj = max(0.0, 1.0 - diff_conj / c_norm) if has_variation else 0.0
         if conf_conj > 0.6:
             patterns.append(Pattern(
                 pattern_type="conjugate_symmetry",
                 confidence=conf_conj,
                 description=f"Palindromic (conjugate) symmetry — data[k] ≈ data[n-1-k]  ({conf_conj:.2%})",
-                metrics={"l2_diff": diff_conj, "relative_error": diff_conj / norm}
+                metrics={"l2_diff": diff_conj, "relative_error": diff_conj / c_norm}
             ))
 
         # ── 2. Anti-symmetry ─────────────────────────────────────────────────
@@ -181,19 +192,19 @@ class PatternDetector:
             ))
 
         # ── 3. Cyclic / periodic symmetry ────────────────────────────────────
-        if n >= 6:
+        if n >= 6 and has_variation:
             best_period, best_conf_cyc = None, 0.0
             # Check periods from 2 up to n//2
             for p in range(2, n // 2 + 1):
                 if n % p != 0:
                     # Allow non-exact multiples: tile the shortest cycle and compare
-                    tile = np.tile(d[:p], n // p + 1)[:n]
+                    tile = np.tile(c[:p], n // p + 1)[:n]
                 else:
-                    tile = np.tile(d[:p], n // p)
-                err = float(np.linalg.norm(d - tile))
-                c = max(0.0, 1.0 - err / norm)
-                if c > best_conf_cyc:
-                    best_conf_cyc = c
+                    tile = np.tile(c[:p], n // p)
+                err = float(np.linalg.norm(c - tile))
+                conf_p = max(0.0, 1.0 - err / c_norm)
+                if conf_p > best_conf_cyc:
+                    best_conf_cyc = conf_p
                     best_period = p
             if best_conf_cyc > 0.7:
                 patterns.append(Pattern(
@@ -209,14 +220,14 @@ class PatternDetector:
         if n >= 4:
             xs = np.linspace(0.0, 1.0, n)
             # f(1-x) is simply the reversed array in this uniform-grid encoding
-            diff_bil = float(np.linalg.norm(d - flipped))
-            conf_bil = max(0.0, 1.0 - diff_bil / norm)
+            diff_bil = float(np.linalg.norm(c - c_flipped))
+            conf_bil = max(0.0, 1.0 - diff_bil / c_norm) if has_variation else 0.0
             if conf_bil > 0.6 and conf_bil != conf_conj:  # skip if identical to conjugate result
                 patterns.append(Pattern(
                     pattern_type="bilateral_symmetry",
                     confidence=conf_bil,
                     description=f"Bilateral functional symmetry — f(x) ≈ f(1-x)  ({conf_bil:.2%})  [RHI: σ ↔ 1-σ]",
-                    metrics={"l2_diff": diff_bil, "relative_error": diff_bil / norm}
+                    metrics={"l2_diff": diff_bil, "relative_error": diff_bil / c_norm}
                 ))
 
         # ── 5. Wildcard: low-degree polynomial fit ───────────────────────────

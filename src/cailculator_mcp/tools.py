@@ -15,6 +15,8 @@ os.environ.setdefault("MPLBACKEND", "Agg")
 # Heavy dependencies (numpy, scipy, clifford, hypercomplex, etc.) are imported
 # lazily inside each tool function so that tools/list responds instantly.
 
+from .provenance import report
+
 logger = logging.getLogger(__name__)
 
 # --- Tool Definitions for MCP ---
@@ -22,13 +24,13 @@ logger = logging.getLogger(__name__)
 TOOLS_DEFINITIONS = [
     {
         "name": "chavez_transform",
-        "description": "Apply the High-Precision Chavez Transform (v2.0) to numerical data. A general integral transform for convergence and stability analysis.",
+        "description": "1D Chavez Transform of a numerical series (experimental; not validated as a structural signal). The value has an exact closed form: sum_i data_i * w_i, where the weights w_i depend only on the series length, alpha and dimension_param, and are largest in the middle of the series. It does not depend on the zero-divisor pair: any pair of the same shape, zero divisor or not, gives the identical value. It is reversal-symmetric (insensitive to sequence direction) and should not be used as a structural or pattern-detection signal. stability_bound is the Lean-verified bound |C[f]| <= M * ||f||_1. See docs/chavez_transform.md.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "data": {"type": "array", "items": {"type": "number"}},
                 "alpha": {"type": "number", "default": 1.0},
-                "dimension_param": {"type": "integer", "default": 2}
+                "dimension_param": {"type": "integer", "default": 2, "description": "Exponent d in the dimensional weighting term Omega_d(x) = (1+||x||^2)^(-d/2). This is a decay-sharpness hyperparameter of the numerical integration, NOT the hypercomplex algebra dimension (which is fixed at 32 internally). Its effect on the output is dominated by this weighting formula and is largely independent of the input data's content."}
             },
             "required": ["data"]
         }
@@ -71,19 +73,19 @@ TOOLS_DEFINITIONS = [
     },
     {
         "name": "list_domain_profiles",
-        "description": "Lists available domain profiles (RHI, Quant Equity, Journalism, General Data, Developer) plus custom-request info.",
+        "description": "Lists available domain profiles (Quant Equity, Journalism, General Data, Developer) plus custom-request info.",
         "inputSchema": {"type": "object", "properties": {}}
     },
     {
         "name": "zdtp_transmit",
-        "description": "Zero Divisor Transmission Protocol v2.0 - High-precision structural transmission up to 256D (Algebraic Ceiling).",
+        "description": "Zero Divisor Transmission Protocol (experimental; not validated as a structural signal). Lifts a 16D input through one or all six Canonical Six gateways to 256D. The outputs have an exact closed form: for gateway k, magnitude_256d = sqrt(||x||^2 + 64*x0^2 + 16*s_k^2), where s_k is a signed sum of four input components; the convergence score is 1 - (std / mean) of the six magnitudes, clipped to [0, 1]. The zero-divisor property of the gateways does not enter the result. See docs/ZDTP_CLOSED_FORM.md.",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "input_16d": {"type": "array", "items": {"type": "number"}, "minItems": 16, "maxItems": 16},
                 "gateway": {"type": ["string", "integer"], "description": "S1, S2, S3A, S3B, S4, S5, 1-6, or 'all'"},
                 "restrict_to_pattern": {"type": "integer", "minimum": 1, "maximum": 6, "description": "Explicit pattern ID (1-6) to use as gateway. Overrides 'gateway' if provided."},
-                "profile": {"type": "string", "default": "general_data"}
+                "profile": {"type": "string", "description": "Domain profile. Omit to use your plan's default profile (see list_domain_profiles)."}
             },
             "required": ["input_16d"]
         }
@@ -128,13 +130,16 @@ TOOLS_DEFINITIONS = [
         "name": "analyze_dataset",
         "description": (
             "Full structural analysis pipeline for financial or numerical data. "
-            "Runs three layers in one call: Chavez Transform (stability scoring), "
-            "pattern detection (linear/geometric/Fibonacci/symmetry), and ZDTP full cascade "
-            "(structural regime health via all six Canonical gateways to 256D). "
-            "Returns regime classification (STABLE/TRANSITIONING/SHIFTING), top patterns, "
-            "per-gateway magnitudes with domain labels, and a convergence score. "
+            "Runs three layers in one call: pattern detection (linear/geometric/Fibonacci/symmetry), "
+            "the 1D Chavez Transform value, and the ZDTP full cascade (all six Canonical gateways "
+            "to 256D). Returns top patterns, per-gateway magnitudes and a convergence score. "
+            "The Chavez value and the ZDTP outputs are experimental and have exact closed forms "
+            "that do not involve the zero-divisor property (a center-weighted sum of the series; "
+            "norms plus signed four-term sums of the last 15 values), so treat them as "
+            "measurements, not structural findings. regime.classification is 'not_assessed': the convergence "
+            "score has not been validated as a regime detector, so no verdict is drawn from it. "
             "Accepts a close-price list or an OHLCV dict. Minimum 16 data points. "
-            "Default profile: quant_equity."
+            "Omit profile to use your plan's default profile."
         ),
         "inputSchema": {
             "type": "object",
@@ -148,8 +153,10 @@ TOOLS_DEFINITIONS = [
                 },
                 "profile": {
                     "type": "string",
-                    "default": "quant_equity",
-                    "description": "Domain profile for terminology and gateway labels."
+                    "description": (
+                        "Domain profile for terminology and gateway labels. "
+                        "Omit to use your plan's default profile (see list_domain_profiles)."
+                    )
                 },
                 "terminology_level": {
                     "type": "string",
@@ -166,8 +173,10 @@ TOOLS_DEFINITIONS = [
         "description": (
             "Cayley-Dickson algebra operations on hypercomplex elements from 16D (sedenions) to 256D. "
             "multiply/add/conjugate return the full coefficient vector (all N components). "
-            "norm returns the scalar magnitude. is_zero_divisor checks bilateral annihilation (PQ=0 AND QP=0) "
-            "at 10^-10 — consistent with the verify_bilateral_oracle tool."
+            "norm returns the scalar magnitude. is_zero_divisor checks bilateral annihilation (PQ=0 AND QP=0), "
+            "declaring zero when both norms are below 1e-10. verify_bilateral_oracle asks the same question "
+            "with a stricter 1e-15 threshold; see docs/EVALUATION_CONTRACT.md. Every response carries a "
+            "provenance block stating the threshold applied."
         ),
         "inputSchema": {
             "type": "object",
@@ -205,7 +214,39 @@ TOOLS_DEFINITIONS = [
 
 # --- Tool Routing ---
 
-async def call_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+_KNOWN_TOOLS = {t["name"] for t in TOOLS_DEFINITIONS} | {"regime_detection"}
+
+
+async def call_tool(name: str, arguments: Dict[str, Any], plan: Optional[str] = None) -> Dict[str, Any]:
+    """Route a tool call and attach the provenance block to its response.
+
+    Provenance and plan gating are applied here, in one place, so every tool
+    (including new ones) gets them. ``plan`` is the caller's subscription plan from
+    the auth server; None (in-process use, tests) applies no gating. Tool
+    exceptions and denied profiles become {"success": False, "error": ...}
+    responses, which also carry provenance.
+    """
+    from .provenance import collecting, build_provenance
+    from .plans import apply_plan, normalize_plan, using_plan
+
+    if name not in _KNOWN_TOOLS:
+        raise ValueError(f"Unknown tool: {name}")
+    if plan is not None:
+        plan = normalize_plan(plan)
+
+    with using_plan(plan), collecting() as record:
+        try:
+            result = await _route(name, apply_plan(name, arguments, plan))
+        except Exception as e:
+            logger.error(f"Tool {name} raised: {e}", exc_info=True)
+            result = {"success": False, "error": str(e)}
+        if not isinstance(result, dict):
+            result = {"success": True, "result": result}
+        result["provenance"] = build_provenance(name, arguments, record)
+    return result
+
+
+async def _route(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     """Route tool call to v2.0 implementations."""
     logger.info(f"v2.0 Routing: {name}")
 
@@ -237,23 +278,127 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
 
 # --- Tool Implementations ---
 
+def _parse_numeric_data(data: Any, field_name: str = "data", allow_empty: bool = False):
+    """Validates and converts `data` into a finite float64 numpy array.
+
+    Raises ValueError (caught by each tool's own try/except) with a clear
+    message instead of letting a raw numpy/scipy exception leak through for
+    non-numeric elements (e.g. a stray string) or non-finite values (NaN/Inf,
+    including numeric-looking strings like "NaN"/"Infinity" that numpy would
+    otherwise silently parse into real NaN/Inf).
+    """
+    import numpy as np
+
+    if data is None or (isinstance(data, (list, tuple)) and len(data) == 0):
+        if allow_empty:
+            return np.array([], dtype=np.float64)
+        raise ValueError(f"'{field_name}' is required and must be a non-empty array of numbers")
+
+    if not isinstance(data, (list, tuple)):
+        raise ValueError(f"'{field_name}' must be an array of numbers, got {type(data).__name__}")
+
+    missing = [i for i, v in enumerate(data) if v is None]
+    if missing:
+        raise ValueError(f"'{field_name}' has missing value(s) (null) at index/indices {missing}")
+
+    try:
+        arr = np.asarray(data, dtype=np.float64)
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"'{field_name}' must contain only numbers: {e}")
+
+    bad = np.where(~np.isfinite(arr))[0]
+    if bad.size > 0:
+        raise ValueError(
+            f"'{field_name}' contains non-finite value(s) (NaN/Inf) at index/indices {bad.tolist()}"
+        )
+
+    return arr
+
+# Thresholds each tool actually applies, reported in provenance["tolerance"].
+# These mirror the literals in the implementations; they document, not configure.
+_CHAVEZ_TOLERANCE = {
+    "quad_epsabs": 1.49e-08, "quad_epsrel": 1.49e-08,  # scipy.integrate.quad defaults
+    "stability_bound_slack": 1e-15,
+}
+_PATTERN_THRESHOLDS = {
+    "sequence_relative_tol": 1e-9, "fibonacci_relative_tol": 1e-6,
+    "symmetry_min_confidence": 0.6, "cyclic_min_confidence": 0.7, "polynomial_min_r2": 0.97,
+    "e8_first_shell_tol": 1e-10,
+}
+_ORACLE_ZERO_THRESHOLD = 1e-15
+_CD_ZERO_THRESHOLD = 1e-10
+
+# The convergence score once mapped to stable (>= 0.8) / transitioning (>= 0.5) / shifting.
+# On the 2.2.0 G3 null series it fell in 0.54-0.65, and so did every structured series
+# tested (sine, palindrome, trend, 50% step break, constant), so the verdict carried no
+# information: 198/200 nulls were "transitioning". It is withheld for every profile until
+# a validated regime detector replaces it.
+_REGIME_WITHHELD_NOTE = (
+    "No regime verdict: the convergence score has not passed a validation gate (on seeded "
+    "null series it falls in the same range as structured series). It is reported as a "
+    "measurement only."
+)
+
+# Decision 1 (2.2.0): the 1D Chavez value and the ZDTP outputs are kept, labeled as what
+# they compute. Closed forms: docs/chavez_transform.md, docs/ZDTP_CLOSED_FORM.md.
+_CHAVEZ_1D_NOTE = (
+    "Experimental, not validated as a structural signal. Closed form: sum_i data_i * w_i, a "
+    "fixed center-weighted sum of the series (weights depend only on length, alpha and d). "
+    "Identical for any zero-divisor or non-zero-divisor pair of the same shape."
+)
+
+_ZDTP_NOTE = (
+    "Experimental, not validated as a structural signal. Closed form: magnitude_256d(k) = "
+    "sqrt(||x||^2 + 64*x0^2 + 16*s_k^2), s_k a signed sum of four input components; the "
+    "convergence score is 1 - (std / mean) of the six magnitudes. The "
+    "zero-divisor property does not enter the result (docs/ZDTP_CLOSED_FORM.md)."
+)
+
+_MEASURED_ONLY_NOTE = (
+    "The {profile} profile reports measured quantities only (output_policy "
+    "'measured_only'): no interpretation of this score has passed a validation gate."
+)
+
+
+def _require_profile(profile_name: Any) -> None:
+    """Reject a profile name with no manifest, instead of silently running with defaults."""
+    import os
+    from .profiles.manager import ProfileManager
+    pm = ProfileManager()
+    if not (isinstance(profile_name, str) and profile_name.isidentifier()
+            and os.path.exists(os.path.join(pm.profiles_dir, profile_name, "manifest.json"))):
+        available = sorted(
+            d for d in os.listdir(pm.profiles_dir)
+            if os.path.exists(os.path.join(pm.profiles_dir, d, "manifest.json"))
+        )
+        raise ValueError(f"unknown profile {profile_name!r}; available: {available}")
+
+
+def _profile_withholds_verdicts(profile_name: str) -> bool:
+    from .profiles.manager import ProfileManager
+    return ProfileManager().output_policy(profile_name).get("verdicts") == "measured_only"
+
+
 async def chavez_transform(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
         import numpy as np
         from .core.chavez_transform import ChavezTransform
         from .core.canonical_six import get_canonical_six
 
-        data = arguments.get("data")
         alpha = float(arguments.get("alpha", 1.0))
         d = int(arguments.get("dimension_param", 2))
 
-        if not data: return {"success": False, "error": "No data"}
+        data_arr = _parse_numeric_data(arguments.get("data"), "data")
+        report(
+            algorithm="chavez_transform.transform_1d/1", framework="cayley-dickson", dimension=32,
+            tolerance=_CHAVEZ_TOLERANCE,
+            inputs={"data": data_arr, "alpha": alpha, "dimension_param": d},
+        )
 
         ct = ChavezTransform(dimension=32, alpha=alpha)
         # Use Pattern 1 as the default anchor for the general transform
         P_arr, Q_arr = get_canonical_six(32)[1]
 
-        data_arr = np.array(data)
         def f(x):
             x_scalar = x[0] if x.ndim > 0 and len(x) > 0 else float(x)
             indices = np.linspace(-5, 5, len(data_arr))
@@ -265,17 +410,21 @@ async def chavez_transform(arguments: Dict[str, Any]) -> Dict[str, Any]:
             "success": True,
             "transform_value": float(result["value"]),
             "stability_bound": result["stability_bound"],
-            "precision": "10^-15"
+            "precision": "10^-15",
+            "note": _CHAVEZ_1D_NOTE,
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 async def detect_patterns(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
-        import numpy as np
         from .patterns import PatternDetector
-        data = np.array(arguments.get("data", []))
+        data = _parse_numeric_data(arguments.get("data"), "data", allow_empty=True)
         alpha = float(arguments.get("alpha", 1.0))
+        report(
+            algorithm="pattern_detector.detect_all_patterns/1", tolerance=_PATTERN_THRESHOLDS,
+            inputs={"data": data, "alpha": alpha},
+        )
         detector = PatternDetector(alpha=alpha)
         patterns = detector.detect_all_patterns(data)
         return {
@@ -292,10 +441,19 @@ async def verify_bilateral_oracle(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
         import numpy as np
         from .core.bilateral_collapse import verify_bilateral_collapse
-        P = np.array(arguments.get("P"))
-        Q = np.array(arguments.get("Q"))
         fw = arguments.get("framework", "cayley-dickson")
-        return verify_bilateral_collapse(P, Q, framework=fw)
+        report(algorithm=f"bilateral_oracle.{fw}/1", framework=fw)
+        if fw not in ("cayley-dickson", "clifford"):
+            raise ValueError(f"framework must be 'cayley-dickson' or 'clifford', got {fw!r}")
+        P = _parse_numeric_data(arguments.get("P"), "P")
+        Q = _parse_numeric_data(arguments.get("Q"), "Q")
+        report(
+            algorithm=f"bilateral_oracle.{fw}/1", framework=fw, dimension=int(len(P)),
+            tolerance={"zero_threshold": _ORACLE_ZERO_THRESHOLD},
+            inputs={"P": P, "Q": Q, "framework": fw},
+        )
+        result = verify_bilateral_collapse(P, Q, precision=_ORACLE_ZERO_THRESHOLD, framework=fw)
+        return {"success": True, **result}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -303,15 +461,31 @@ async def map_e8_orbit(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
         import numpy as np
         from .core.extended_structures import map_to_weyl_orbit
-        v = np.array(arguments.get("vector"))
-        return map_to_weyl_orbit(v)
+        v = _parse_numeric_data(arguments.get("vector"), "vector")
+        report(
+            algorithm="e8.map_to_weyl_orbit/1", dimension=int(len(v)),
+            tolerance={"zero_component": 1e-8, "first_shell": 1e-10},
+            inputs={"vector": v},
+        )
+        return {"success": True, **map_to_weyl_orbit(v)}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 async def list_domain_profiles(arguments: Dict[str, Any]) -> Dict[str, Any]:
     from .profiles.manager import ProfileManager
+    report(algorithm="profiles.list/2", inputs={})
+    from .plans import PLAN_PROFILES, current_plan, default_profile
     pm = ProfileManager()
-    return {"success": True, "profiles": pm.list_profiles()}
+    profiles = pm.list_profiles()
+    plan = current_plan()
+    if plan is None:
+        return {"success": True, "profiles": profiles}
+    included = PLAN_PROFILES[plan]
+    for p in profiles:
+        if p.get("name") != "custom_request":
+            p["included_in_plan"] = p.get("name") in included
+    return {"success": True, "plan": plan, "default_profile": default_profile(plan),
+            "profiles": profiles}
 
 async def zdtp_transmit(arguments: Dict[str, Any]) -> Dict[str, Any]:
     try:
@@ -320,11 +494,25 @@ async def zdtp_transmit(arguments: Dict[str, Any]) -> Dict[str, Any]:
         gateway = arguments.get("gateway")
         restrict_to_pattern = arguments.get("restrict_to_pattern")
         profile = arguments.get("profile", "general_data")
+        report(profile=profile)
+        _require_profile(profile)
 
         zdtp = get_zdtp_v2()
-        
+        common = dict(framework="cayley-dickson", dimension=256, profile=profile,
+                      tolerance={"oracle_zero_threshold": _ORACLE_ZERO_THRESHOLD})
+
         if gateway == "all":
+            report(algorithm="zdtp.full_cascade/1",
+                   inputs={"input_16d": [float(v) for v in input_16d], "gateway": "all",
+                           "profile": profile},
+                   **common)
             result = zdtp.full_cascade(input_16d, profile_name=profile)
+            convergence = result.get("convergence", {})
+            if "stability_level" in convergence:
+                convergence["stability_level"] = "not_assessed"
+                convergence["note"] = (_MEASURED_ONLY_NOTE.format(profile=profile)
+                                       if _profile_withholds_verdicts(profile) else _REGIME_WITHHELD_NOTE)
+            result["zdtp_note"] = _ZDTP_NOTE
             result["success"] = True
             return result
         
@@ -340,8 +528,13 @@ async def zdtp_transmit(arguments: Dict[str, Any]) -> Dict[str, Any]:
                 "S1": 1, "S2": 2, "S3A": 3, "S3B": 4, "S4": 5, "S5": 6
             }
             pid = pid_map.get(gateway.upper(), 1)
-            
+
+        report(algorithm="zdtp.transmit/1",
+               inputs={"input_16d": [float(v) for v in input_16d], "pattern_id": int(pid),
+                       "profile": profile},
+               **common)
         result = zdtp.transmit(input_16d, pid, profile_name=profile)
+        result["zdtp_note"] = _ZDTP_NOTE
         result["success"] = True
         return result
     except Exception as e:
@@ -357,6 +550,8 @@ async def illustrate(arguments: Dict[str, Any]) -> Dict[str, Any]:
         plot_spec = arguments.get("plot_spec", {})
         style_hints = arguments.get("style_hints", {})
         description = arguments.get("description", "")
+        report(algorithm="illustrate.plot_custom/1",
+               inputs={"plot_spec": plot_spec, "style_hints": style_hints, "description": description})
 
         if not plot_spec:
             return {
@@ -407,20 +602,29 @@ async def analyze_dataset(arguments: Dict[str, Any]) -> Dict[str, Any]:
         raw = arguments.get("data")
         profile_name = arguments.get("profile", "quant_equity")
         level = arguments.get("terminology_level", "standard")
+        report(algorithm="analyze_dataset.pipeline/1", profile=profile_name)
+        _require_profile(profile_name)
 
         if raw is None:
             return {"success": False, "error": "data is required"}
 
         # Accept list of numbers (close prices) or OHLCV dict
         if isinstance(raw, list):
-            close = np.array(raw, dtype=float)
+            close = _parse_numeric_data(raw, "data")
         elif isinstance(raw, dict):
             close_key = next((k for k in ("close", "Close", "price", "Price") if k in raw), None)
             if not close_key:
                 return {"success": False, "error": "data dict must contain a 'close' key"}
-            close = np.array(raw[close_key], dtype=float)
+            close = _parse_numeric_data(raw[close_key], "data.close")
         else:
             return {"success": False, "error": "data must be a list of numbers or a dict with a 'close' key"}
+
+        report(
+            algorithm="analyze_dataset.pipeline/1", framework="cayley-dickson", profile=profile_name,
+            tolerance={"oracle_zero_threshold": _ORACLE_ZERO_THRESHOLD,
+                       "pattern_thresholds": _PATTERN_THRESHOLDS},
+            inputs={"close": close, "profile": profile_name, "terminology_level": level},
+        )
 
         if len(close) < 16:
             return {"success": False, "error": f"Minimum 16 data points required, got {len(close)}"}
@@ -449,15 +653,6 @@ async def analyze_dataset(arguments: Dict[str, Any]) -> Dict[str, Any]:
         cascade = zdtp.full_cascade(input_16d, profile_name=profile_name)
         convergence = cascade.get("convergence", {})
         conv_score = float(convergence.get("score", 0.0))
-        stability_level = convergence.get("stability_level", "UNKNOWN")
-
-        # --- Regime classification from convergence ---
-        if conv_score >= 0.8:
-            regime = "stable"
-        elif conv_score >= 0.5:
-            regime = "transitioning"
-        else:
-            regime = "shifting"
 
         # --- Per-gateway breakdown ---
         gateways_raw = cascade.get("gateways", {})
@@ -474,19 +669,14 @@ async def analyze_dataset(arguments: Dict[str, Any]) -> Dict[str, Any]:
             "profile": profile_name,
             "data_points": int(len(close)),
             "regime": {
-                "classification": regime,
-                "stability_level": stability_level,
+                "classification": "not_assessed",
+                "stability_level": "not_assessed",
                 "convergence_score": round(conv_score, 4),
-                "interpretation": (
-                    "High structural coherence across all six gateways - market in equilibrium."
-                    if regime == "stable" else
-                    "Moderate coherence - potential regime shift in progress."
-                    if regime == "transitioning" else
-                    "Low coherence - structural break detected, regimes diverging."
-                )
+                "interpretation": _REGIME_WITHHELD_NOTE,
             },
             "structural_analysis": {
                 "chavez_transform_value": round(float(ct_result["value"]), 6),
+                "chavez_transform_note": _CHAVEZ_1D_NOTE,
                 "stability_bound": ct_result["stability_bound"],
                 "patterns_detected": len(patterns),
                 "top_patterns": [
@@ -502,10 +692,23 @@ async def analyze_dataset(arguments: Dict[str, Any]) -> Dict[str, Any]:
             "zdtp_convergence": {
                 "score": round(conv_score, 4),
                 "mean_magnitude": round(float(convergence.get("mean_magnitude", 0.0)), 6),
-                "std_dev": round(float(convergence.get("std_dev", 0.0)), 6)
+                "std_dev": round(float(convergence.get("std_dev", 0.0)), 6),
+                "note": _ZDTP_NOTE,
             },
             "engine": f"v{__version__}"
         }
+
+        # Profiles with output_policy "measured_only" get measured quantities, no verdicts
+        if _profile_withholds_verdicts(profile_name):
+            result["regime"]["interpretation"] = _MEASURED_ONLY_NOTE.format(profile=profile_name)
+            result["structural_analysis"].update({
+                "patterns_detected": 0,
+                "top_patterns": [],
+                "patterns_withheld": (
+                    "Pattern-detector results are withheld under this profile: its detection "
+                    "thresholds have not been validated against null data."
+                ),
+            })
 
         # Apply profile terminology translation at non-technical levels
         if level != "technical":
@@ -528,6 +731,7 @@ async def compute_high_dimensional(arguments: Dict[str, Any]) -> Dict[str, Any]:
         VALID_OPS = {"multiply", "add", "conjugate", "norm", "is_zero_divisor"}
 
         operation = arguments.get("operation")
+        report(algorithm=f"cayley_dickson.{operation}/1", framework="cayley-dickson")
         if operation not in VALID_OPS:
             return {"success": False, "error": f"operation must be one of {sorted(VALID_OPS)}"}
 
@@ -546,10 +750,25 @@ async def compute_high_dimensional(arguments: Dict[str, Any]) -> Dict[str, Any]:
         if dimension not in _DIM_CLASS:
             return {"success": False, "error": f"dimension must be one of [16, 32, 64, 128, 256], got {dimension}"}
 
+        longest = max(len(a_coeffs), len(b_coeffs))
+        if longest > dimension:
+            return {"success": False, "error": (
+                f"Operand has {longest} components but dimension is {dimension}; "
+                "refusing to truncate silently")}
+
         cls = _DIM_CLASS[dimension]
 
         def pad(coeffs):
             return (list(coeffs) + [0.0] * dimension)[:dimension]
+
+        uses_b = operation in ("multiply", "add", "is_zero_divisor")
+        report(
+            algorithm=f"cayley_dickson.{operation}/1", framework="cayley-dickson", dimension=dimension,
+            tolerance={"zero_threshold": _CD_ZERO_THRESHOLD} if operation == "is_zero_divisor" else None,
+            inputs={"operation": operation, "dimension": dimension,
+                    "a": [float(v) for v in pad(a_coeffs)],
+                    **({"b": [float(v) for v in pad(b_coeffs)]} if uses_b and b_coeffs else {})},
+        )
 
         a_elem = cls(*pad(a_coeffs))
 
@@ -584,7 +803,7 @@ async def compute_high_dimensional(arguments: Dict[str, Any]) -> Dict[str, Any]:
         # is_zero_divisor
         pq_norm = float(abs(a_elem * b_elem))
         qp_norm = float(abs(b_elem * a_elem))
-        threshold = 1e-10
+        threshold = _CD_ZERO_THRESHOLD
         return {
             "success": True, "operation": operation, "dimension": dimension,
             "is_bilateral_zero_divisor": pq_norm < threshold and qp_norm < threshold,
@@ -599,10 +818,12 @@ async def compute_high_dimensional(arguments: Dict[str, Any]) -> Dict[str, Any]:
 async def get_version(arguments: Dict[str, Any]) -> Dict[str, Any]:
     """Returns the version information for the CAILculator MCP."""
     from . import __version__
+    from .provenance import ENGINE_VERSION
+    report(algorithm="server.get_version/1", inputs={})
     return {
         "success": True,
         "version": __version__,
-        "engine": "v2.0 High-Precision",
+        "engine": ENGINE_VERSION,
         "precision": "10^-15",
         "status": "Production Stable"
     }

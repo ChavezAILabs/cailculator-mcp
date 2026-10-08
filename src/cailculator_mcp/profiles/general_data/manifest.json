@@ -2,7 +2,14 @@
   "name": "general_data",
   "version": "2.0.0",
   "scope": "General-purpose high-dimensional data analysis",
-  "used_theorems": ["ChavezTransform_genuine", "BilateralCollapse"],
+  "used_theorems": [
+    "ChavezTransform_genuine",
+    "BilateralCollapse"
+  ],
   "empirical_dependencies": [],
-  "tier": "Official"
+  "tier": "Official",
+  "documented_uses": [
+    "zdtp_transmit",
+    "analyze_dataset"
+  ]
 }

@@ -1,0 +1,46 @@
+{
+  "id": "developer_v1_zdtp_s2",
+  "tool": "zdtp_transmit",
+  "args": {
+    "input_16d": [
+      0.0,
+      0.841471,
+      0.909297,
+      0.14112,
+      -0.756802,
+      -0.958924,
+      -0.279415,
+      0.656987,
+      0.989358,
+      0.412118,
+      -0.544021,
+      -0.99999,
+      -0.536573,
+      0.420167,
+      0.990607,
+      0.650288
+    ],
+    "gateway": "S2",
+    "profile": "developer_v1"
+  },
+  "verification": "recorded",
+  "source": "live output 2026-09-24",
+  "notes": "Template profile loads and returns a neutral label.",
+  "profile": "developer_v1",
+  "record_keys": [
+    "success",
+    "gateway_id",
+    "gateway_label",
+    "magnitude_256d"
+  ],
+  "expected": {
+    "success": true,
+    "gateway_id": 2,
+    "gateway_label": "Pattern 2",
+    "magnitude_256d": 8.095225439141764
+  },
+  "expected_input_hash": "sha256:7c840e5856159cbb3b3cadbf4fa063a93a02286e1cfbb91689fe78e8011fdb2c",
+  "tolerance": {
+    "magnitude_256d": 8.095225439141764e-09
+  }
+}

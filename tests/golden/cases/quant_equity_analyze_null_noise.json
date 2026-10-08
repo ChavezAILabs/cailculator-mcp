@@ -1,0 +1,17 @@
+{
+  "id": "quant_equity_analyze_null_noise",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": {
+      "$data": "null_noise_seed1234.json"
+    },
+    "profile": "quant_equity"
+  },
+  "verification": "recorded",
+  "source": "null control",
+  "notes": "Seeded N(250, 25) noise. A null must produce no positive structural finding.",
+  "profile": "quant_equity",
+  "null_control": true,
+  "expected_structural_findings": [],
+  "expected_input_hash": "sha256:d84b3989136958341a41a8b041f7a2c78d92292bf816004c002463fd74bd710d"
+}

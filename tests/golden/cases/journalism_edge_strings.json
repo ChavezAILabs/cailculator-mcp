@@ -1,0 +1,38 @@
+{
+  "id": "journalism_edge_strings",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": [
+      "abc",
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0
+    ],
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "edge case (handoff 3B)",
+  "notes": "Non-numeric string.",
+  "profile": "journalism",
+  "expected": {
+    "success": false,
+    "error": "'data' must contain only numbers: could not convert string to float: 'abc'"
+  },
+  "expected_input_hash": "sha256:b6eaf17bd0a39cb246e281221950a8b7080059baa1c4bb4af4232df39be3385a"
+}

@@ -1,0 +1,93 @@
+{
+  "id": "journalism_poverty_analyze",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": {
+      "$data": "journalism_poverty_snap_enrollment.json"
+    },
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "tests/golden/data/generate_data.py (synthetic, seeded)",
+  "notes": "Realistic-shaped poverty series. Journalism 3.0.0 reports measured quantities only.",
+  "profile": "journalism",
+  "record_keys": [
+    "success",
+    "profile",
+    "data_points",
+    "regime.classification",
+    "regime.stability_level",
+    "regime.convergence_score",
+    "structural_analysis.chavez_transform_value",
+    "structural_analysis.patterns_detected",
+    "zdtp_convergence.score",
+    "gateway_breakdown.S1.label",
+    "gateway_breakdown.S1.magnitude_256d",
+    "gateway_breakdown.S2.label",
+    "gateway_breakdown.S2.magnitude_256d",
+    "gateway_breakdown.S3A.label",
+    "gateway_breakdown.S3A.magnitude_256d",
+    "gateway_breakdown.S3B.label",
+    "gateway_breakdown.S3B.magnitude_256d",
+    "gateway_breakdown.S4.label",
+    "gateway_breakdown.S4.magnitude_256d",
+    "gateway_breakdown.S5.label",
+    "gateway_breakdown.S5.magnitude_256d"
+  ],
+  "expected_structural_findings": [],
+  "expected": {
+    "success": true,
+    "profile": "journalism",
+    "data_points": 60,
+    "regime": {
+      "classification": "not_assessed",
+      "stability_level": "not_assessed",
+      "convergence_score": 0.5881
+    },
+    "structural_analysis": {
+      "chavez_transform_value": 15512.154526,
+      "patterns_detected": 0
+    },
+    "zdtp_convergence": {
+      "score": 0.5881
+    },
+    "gateway_breakdown": {
+      "S1": {
+        "label": "S1",
+        "magnitude_256d": 16.173621
+      },
+      "S2": {
+        "label": "S2",
+        "magnitude_256d": 16.10223
+      },
+      "S3A": {
+        "label": "S3A",
+        "magnitude_256d": 16.107387
+      },
+      "S3B": {
+        "label": "S3B",
+        "magnitude_256d": 3.795398
+      },
+      "S4": {
+        "label": "S4",
+        "magnitude_256d": 8.785422
+      },
+      "S5": {
+        "label": "S5",
+        "magnitude_256d": 8.855612
+      }
+    }
+  },
+  "expected_input_hash": "sha256:151d7e907c46e14c525217bb6beb814c5e81e60ea3758860e63e12694b559762",
+  "tolerance": {
+    "regime.convergence_score": 5.881e-10,
+    "structural_analysis.chavez_transform_value": 1.5512154526e-05,
+    "zdtp_convergence.score": 5.881e-10,
+    "gateway_breakdown.S1.magnitude_256d": 1.6173621e-08,
+    "gateway_breakdown.S2.magnitude_256d": 1.6102229999999998e-08,
+    "gateway_breakdown.S3A.magnitude_256d": 1.6107387e-08,
+    "gateway_breakdown.S3B.magnitude_256d": 3.7953980000000005e-09,
+    "gateway_breakdown.S4.magnitude_256d": 8.785422000000001e-09,
+    "gateway_breakdown.S5.magnitude_256d": 8.855612000000002e-09
+  }
+}
