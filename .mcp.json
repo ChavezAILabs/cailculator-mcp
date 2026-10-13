@@ -1,13 +1,13 @@
 {
   "mcpServers": {
     "cailculator-mcp": {
-      "command": "C:\\Users\\chave\\PROJECTS\\cailculator-mcp\\venv\\Scripts\\python.exe",
+      "command": "C:\\dev\\projects\\cailculator-mcp\\venv\\Scripts\\python.exe",
       "args": [
         "-m",
         "cailculator_mcp.server"
       ],
       "env": {
-        "CAILCULATOR_API_KEY": "cail_l0r6ZFNeDckQtNa2H0Mjc7-zoPq_b3aMX12BwjrQNwY",
+        "CAILCULATOR_API_KEY": "${CAILCULATOR_API_KEY}",
         "CAILCULATOR_ENABLE_OFFLINE_FALLBACK": "true"
       }
     }
