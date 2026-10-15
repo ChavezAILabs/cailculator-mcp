@@ -1,0 +1,51 @@
+{
+  "profile": "quant_equity",
+  "profile_version": "3.0.0",
+  "requested_tier": "Official",
+  "all_passed": true,
+  "gates": {
+    "G1": {
+      "passed": true,
+      "details": [
+        "all claims and theorems traceable"
+      ]
+    },
+    "G2": {
+      "passed": true,
+      "cases": 2,
+      "details": [
+        "all profile goldens pass"
+      ]
+    },
+    "G3": {
+      "passed": true,
+      "false_positive_rate": 0.0,
+      "null_series_run": 200,
+      "null_series_planned": 200,
+      "flagged": 0,
+      "stopped_early": false,
+      "finding_counts": {},
+      "details": [
+        "0/200 null series flagged as structured (0.0%); ceiling 5%"
+      ]
+    },
+    "G4": {
+      "passed": true,
+      "details": [
+        "1 case(s) identical on rerun"
+      ]
+    },
+    "G5": {
+      "passed": true,
+      "details": [
+        "2 response(s) carry name, version, tier"
+      ]
+    }
+  },
+  "false_positive_rate": 0.0,
+  "null_series": 200,
+  "fp_ceiling": 0.05,
+  "golden_suite": "5",
+  "commit": "9cc0d79",
+  "checked_at": "2026-10-15T06:49:15Z"
+}

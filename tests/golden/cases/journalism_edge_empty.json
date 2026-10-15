@@ -1,0 +1,17 @@
+{
+  "id": "journalism_edge_empty",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": [],
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "edge case (handoff 3B)",
+  "notes": "Empty list.",
+  "profile": "journalism",
+  "expected": {
+    "success": false,
+    "error": "'data' is required and must be a non-empty array of numbers"
+  },
+  "expected_input_hash": "sha256:e087de1c85ea751a27d1e8d08ec1a9c6aca0776a6bf0bdcd7465f650089f354b"
+}

@@ -76,6 +76,28 @@
             transform: scale(1.05);
         }
 
+        .api-key {
+            font-family: Consolas, Menlo, monospace;
+            font-size: 1em;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 14px;
+            margin: 12px 0;
+            word-break: break-all;
+            user-select: all;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 18px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
         .error {
             color: #d32f2f;
             background: #ffebee;
@@ -98,13 +120,22 @@
             <h1>Welcome to CAILculator!</h1>
             <p>Your subscription has been activated successfully.</p>
 
+            {% if api_key %}
             <div class="email-notice">
-                <p><strong>📧 Your API Key Will Be Emailed</strong></p>
-                <p>Your API key will be delivered to your email address within 24 hours. You'll need this key to use the CAILculator MCP server.</p>
+                <p><strong>🔑 Your API key (shown only once)</strong></p>
+                <div class="api-key" id="api-key">{{ api_key }}</div>
+                <button class="copy-btn" type="button" onclick="navigator.clipboard.writeText(document.getElementById('api-key').textContent)">Copy key</button>
+                <p style="margin-top: 12px;">Save it now, in a password manager. We store only a one-way hash of it, so <strong>this page cannot show it again</strong> and we cannot look it up.</p>
                 <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                    <em>Need immediate access? Email us at iknowpi@gmail.com and we'll get you set up right away.</em>
+                    <em>Lost it? Email paul@chavezailabs.com from {{ email }} and we'll issue a replacement.</em>
                 </p>
             </div>
+            {% elif already_revealed %}
+            <div class="email-notice">
+                <p><strong>🔑 Your API key was already shown</strong></p>
+                <p>For security, the key for this checkout is displayed only once. If you didn't save it, email paul@chavezailabs.com from the address you subscribed with, and we'll issue a replacement.</p>
+            </div>
+            {% endif %}
 
             <p><strong>Next Steps:</strong></p>
             <ol style="text-align: left; margin: 20px 40px; color: #555;">

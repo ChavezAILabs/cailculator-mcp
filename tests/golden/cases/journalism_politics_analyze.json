@@ -1,0 +1,93 @@
+{
+  "id": "journalism_politics_analyze",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": {
+      "$data": "journalism_politics_contributions.json"
+    },
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "tests/golden/data/generate_data.py (synthetic, seeded)",
+  "notes": "Realistic-shaped politics series. Journalism 3.0.0 reports measured quantities only.",
+  "profile": "journalism",
+  "record_keys": [
+    "success",
+    "profile",
+    "data_points",
+    "regime.classification",
+    "regime.stability_level",
+    "regime.convergence_score",
+    "structural_analysis.chavez_transform_value",
+    "structural_analysis.patterns_detected",
+    "zdtp_convergence.score",
+    "gateway_breakdown.S1.label",
+    "gateway_breakdown.S1.magnitude_256d",
+    "gateway_breakdown.S2.label",
+    "gateway_breakdown.S2.magnitude_256d",
+    "gateway_breakdown.S3A.label",
+    "gateway_breakdown.S3A.magnitude_256d",
+    "gateway_breakdown.S3B.label",
+    "gateway_breakdown.S3B.magnitude_256d",
+    "gateway_breakdown.S4.label",
+    "gateway_breakdown.S4.magnitude_256d",
+    "gateway_breakdown.S5.label",
+    "gateway_breakdown.S5.magnitude_256d"
+  ],
+  "expected_structural_findings": [],
+  "expected": {
+    "success": true,
+    "profile": "journalism",
+    "data_points": 48,
+    "regime": {
+      "classification": "not_assessed",
+      "stability_level": "not_assessed",
+      "convergence_score": 0.5368
+    },
+    "structural_analysis": {
+      "chavez_transform_value": 4592451.3904,
+      "patterns_detected": 0
+    },
+    "zdtp_convergence": {
+      "score": 0.5368
+    },
+    "gateway_breakdown": {
+      "S1": {
+        "label": "S1",
+        "magnitude_256d": 24.548263
+      },
+      "S2": {
+        "label": "S2",
+        "magnitude_256d": 24.537876
+      },
+      "S3A": {
+        "label": "S3A",
+        "magnitude_256d": 22.012023
+      },
+      "S3B": {
+        "label": "S3B",
+        "magnitude_256d": 6.894818
+      },
+      "S4": {
+        "label": "S4",
+        "magnitude_256d": 9.826328
+      },
+      "S5": {
+        "label": "S5",
+        "magnitude_256d": 9.816476
+      }
+    }
+  },
+  "expected_input_hash": "sha256:12802017f75de26704591066e70b04e8636e50ad9c4d49448d61cef30fd23177",
+  "tolerance": {
+    "regime.convergence_score": 5.368e-10,
+    "structural_analysis.chavez_transform_value": 0.0045924513904000005,
+    "zdtp_convergence.score": 5.368e-10,
+    "gateway_breakdown.S1.magnitude_256d": 2.4548263e-08,
+    "gateway_breakdown.S2.magnitude_256d": 2.4537876e-08,
+    "gateway_breakdown.S3A.magnitude_256d": 2.2012023e-08,
+    "gateway_breakdown.S3B.magnitude_256d": 6.8948180000000006e-09,
+    "gateway_breakdown.S4.magnitude_256d": 9.826328e-09,
+    "gateway_breakdown.S5.magnitude_256d": 9.816476e-09
+  }
+}

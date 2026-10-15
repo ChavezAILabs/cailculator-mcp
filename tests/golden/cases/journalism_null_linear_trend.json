@@ -1,0 +1,34 @@
+{
+  "id": "journalism_null_linear_trend",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": {
+      "$data": "null_linear_trend.json"
+    },
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "null control (handoff 3B)",
+  "notes": "A null must never produce a positive structural finding.",
+  "profile": "journalism",
+  "null_control": true,
+  "expected_structural_findings": [],
+  "record_keys": [
+    "success",
+    "regime.classification",
+    "regime.stability_level",
+    "regime.convergence_score"
+  ],
+  "expected": {
+    "success": true,
+    "regime": {
+      "classification": "not_assessed",
+      "stability_level": "not_assessed",
+      "convergence_score": 0.573
+    }
+  },
+  "expected_input_hash": "sha256:a6a2805364f662b4555956f0be5cc2f962f9acdeff9cde81639cded347cc78b4",
+  "tolerance": {
+    "regime.convergence_score": 5.73e-10
+  }
+}

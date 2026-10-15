@@ -14,6 +14,8 @@ import importlib
 import logging
 from typing import Dict, List, Any, Optional
 
+from .gates import load_gate_record, resolve_tier
+
 logger = logging.getLogger(__name__)
 
 class ProfileManager:
@@ -22,9 +24,8 @@ class ProfileManager:
     """
 
     _PROFILE_METADATA = {
-        "rhi":          {"tier": "Academic",    "scope": "Riemann Hypothesis Investigation — prime embeddings (log p → 16D root) and spectral structure."},
-        "quant_equity": {"tier": "Quant",       "scope": "Market regime detection from OHLCV: volatility anchors, technical indicators, Chavez Transform stability."},
-        "journalism":   {"tier": "Journalist",  "scope": "Structural tipping points and signal robustness in gathered data (e.g. FEC campaign finance)."},
+        "quant_equity": {"tier": "Quant",       "scope": "Measured structural quantities and technical indicators for OHLCV price data."},
+        "journalism":   {"tier": "Journalist",  "scope": "Measured structural quantities for gathered public-records data (e.g. FEC campaign finance)."},
         "general_data": {"tier": "Individual",  "scope": "General-purpose numerical structure analysis."},
         "developer_v1": {"tier": "Individual",  "scope": "Developer / debugging profile."},
     }
@@ -57,8 +58,10 @@ class ProfileManager:
                 continue
             if os.path.exists(manifest_path):
                 try:
-                    with open(manifest_path, "r") as f:
-                        profiles.append(json.load(f))
+                    with open(manifest_path, "r", encoding="utf-8") as f:
+                        manifest = json.load(f)
+                    status = resolve_tier(manifest, load_gate_record(full_path))
+                    profiles.append({**manifest, **status})
                     continue
                 except Exception as e:
                     logger.error(f"Failed to load manifest for {entry}: {e}")
@@ -77,6 +80,45 @@ class ProfileManager:
             "note": "Contact us to build a verified bridge for your specialized data.",
         })
         return profiles
+
+    def _read_manifest(self, name: str) -> Optional[Dict[str, Any]]:
+        if not name or os.path.basename(name) != name:
+            return None
+        manifest_path = os.path.join(self.profiles_dir, name, "manifest.json")
+        if not os.path.exists(manifest_path):
+            return None
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def describe(self, name: str) -> Dict[str, Any]:
+        """Name, version, and effective tier of a profile, for response provenance."""
+        try:
+            manifest = self._read_manifest(name)
+        except Exception as e:
+            logger.error(f"Failed to read manifest for {name}: {e}")
+            manifest = None
+        if manifest is None:
+            return {"name": name, "version": None, "tier": None, "found": False}
+        status = resolve_tier(manifest, load_gate_record(os.path.join(self.profiles_dir, name)))
+        described = {
+            "name": name,
+            "version": manifest.get("version"),
+            "tier": status["tier"],
+            "gate_status": status["gate_status"],
+        }
+        if status["tier"] == "Experimental":
+            described["gates_failed"] = status["gates_failed"]
+            if status.get("tier_reason"):
+                described["notice"] = status["tier_reason"]
+        return described
+
+    def output_policy(self, name: str) -> Dict[str, Any]:
+        """The profile's declared output policy (e.g. {"verdicts": "measured_only"})."""
+        try:
+            manifest = self._read_manifest(name) or {}
+        except Exception:
+            manifest = {}
+        return manifest.get("output_policy", {})
 
     def load_profile(self, name: str) -> bool:
         """
@@ -103,8 +145,6 @@ class ProfileManager:
             # Look for common mapper names or default
             if self.active_name == "quant_equity":
                 return getattr(module, "map_ohlcv_to_sedenion")
-            elif self.active_name == "rhi":
-                return getattr(module, "get_parametric_lift")
             elif self.active_name == "journalism":
                 # Journalism profile supports sub-categories
                 if category == "politics":

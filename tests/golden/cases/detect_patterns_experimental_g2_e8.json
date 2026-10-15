@@ -1,0 +1,68 @@
+{
+  "id": "detect_patterns_experimental_g2_e8",
+  "tool": "detect_patterns",
+  "args": {
+    "data": [
+      0.0,
+      1.0,
+      -1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "verification": "recorded",
+  "source": "live output 2026-10-14",
+  "notes": "Fires both experimental checks. Since 2026-10-14 they report confidence null and experimental true (previously fixed 0.9 and 0.95).",
+  "record_keys": [
+    "success",
+    "patterns_detected"
+  ],
+  "tolerance": {},
+  "expected": {
+    "success": true,
+    "patterns_detected": [
+      {
+        "type": "G2_invariant_structure",
+        "confidence": null,
+        "experimental": true,
+        "description": "Experimental, not validated: data passes the G2 bilateral-family check",
+        "metrics": {
+          "is_g2_candidate": true,
+          "boundary_violation": false,
+          "p_indices": [
+            1,
+            2
+          ],
+          "q_indices": [
+            1,
+            2
+          ]
+        }
+      },
+      {
+        "type": "E8_weyl_resonance",
+        "confidence": null,
+        "experimental": true,
+        "description": "Experimental, not validated: data projects to E8 Weyl orbit 1 (Sparse/Type1)",
+        "metrics": {
+          "orbit_id": 1,
+          "norm_squared_8d": 2.0,
+          "is_on_first_shell": true,
+          "classification": "Sparse/Type1"
+        }
+      }
+    ]
+  },
+  "expected_input_hash": "sha256:2e623fbfb0753f8b6d58aea21c31fc45c3ebe7d7d49869abdff4cbef1622b27b"
+}

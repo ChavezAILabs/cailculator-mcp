@@ -1,0 +1,38 @@
+{
+  "id": "journalism_edge_missing",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": [
+      100.0,
+      100.0,
+      100.0,
+      null,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0
+    ],
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "edge case (handoff 3B)",
+  "notes": "Missing value (JSON null).",
+  "profile": "journalism",
+  "expected": {
+    "success": false,
+    "error": "'data' has missing value(s) (null) at index/indices [3]"
+  },
+  "expected_input_hash": "sha256:2b153d90536889de4be39d83ee1b7b862e5cd47bc8cf5bfe79dd31e8e9b8b31b"
+}

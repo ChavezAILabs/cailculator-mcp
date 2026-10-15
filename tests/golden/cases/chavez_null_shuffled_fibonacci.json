@@ -1,0 +1,52 @@
+{
+  "id": "chavez_null_shuffled_fibonacci",
+  "tool": "chavez_transform",
+  "args": {
+    "data": [
+      233.0,
+      5.0,
+      1597.0,
+      1.0,
+      89.0,
+      21.0,
+      610.0,
+      8.0,
+      34.0,
+      377.0,
+      2.0,
+      987.0,
+      13.0,
+      144.0,
+      3.0,
+      55.0
+    ],
+    "alpha": 1.0,
+    "dimension_param": 2
+  },
+  "verification": "recorded",
+  "source": "AIEX-996 null control",
+  "notes": "Same values as chavez_structured_fibonacci, order shuffled.",
+  "record_keys": [
+    "success",
+    "transform_value",
+    "stability_bound.M",
+    "stability_bound.satisfied",
+    "stability_bound.ratio"
+  ],
+  "null_control": true,
+  "expected": {
+    "success": true,
+    "transform_value": 2014.1851021531486,
+    "stability_bound": {
+      "M": 2.9430355293715387,
+      "satisfied": true,
+      "ratio": 0.09697183385116785
+    }
+  },
+  "expected_input_hash": "sha256:84b3bfe0407fcabafd681c5f3dc8878157f068de13c2df6fbb7f60dad31bfb73",
+  "tolerance": {
+    "transform_value": 2.0141851021531487e-06,
+    "stability_bound.M": 2.9430355293715387e-09,
+    "stability_bound.ratio": 9.697183385116786e-11
+  }
+}

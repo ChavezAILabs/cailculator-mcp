@@ -1,0 +1,17 @@
+{
+  "id": "general_data_analyze_null_noise",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": {
+      "$data": "null_noise_seed1234.json"
+    },
+    "profile": "general_data"
+  },
+  "verification": "recorded",
+  "source": "null control",
+  "notes": "Seeded N(250, 25) noise. A null must produce no positive structural finding.",
+  "profile": "general_data",
+  "null_control": true,
+  "expected_structural_findings": [],
+  "expected_input_hash": "sha256:07800ce8b0745e45a4cd62266e0862e75354f77dfeba6c336a46d5fc358ccb22"
+}

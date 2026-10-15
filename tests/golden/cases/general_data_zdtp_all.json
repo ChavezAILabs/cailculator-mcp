@@ -1,0 +1,96 @@
+{
+  "id": "general_data_zdtp_all",
+  "tool": "zdtp_transmit",
+  "args": {
+    "input_16d": [
+      0.0,
+      0.841471,
+      0.909297,
+      0.14112,
+      -0.756802,
+      -0.958924,
+      -0.279415,
+      0.656987,
+      0.989358,
+      0.412118,
+      -0.544021,
+      -0.99999,
+      -0.536573,
+      0.420167,
+      0.990607,
+      0.650288
+    ],
+    "gateway": "all",
+    "profile": "general_data"
+  },
+  "verification": "recorded",
+  "source": "live output 2026-09-24",
+  "notes": "input_16d = (0, sin 1, ..., sin 15).",
+  "profile": "general_data",
+  "record_keys": [
+    "success",
+    "convergence.score",
+    "convergence.mean_magnitude",
+    "convergence.std_dev",
+    "convergence.stability_level",
+    "gateways.S1.gateway_label",
+    "gateways.S1.magnitude_256d",
+    "gateways.S2.gateway_label",
+    "gateways.S2.magnitude_256d",
+    "gateways.S3A.gateway_label",
+    "gateways.S3A.magnitude_256d",
+    "gateways.S3B.gateway_label",
+    "gateways.S3B.magnitude_256d",
+    "gateways.S4.gateway_label",
+    "gateways.S4.magnitude_256d",
+    "gateways.S5.gateway_label",
+    "gateways.S5.magnitude_256d"
+  ],
+  "expected": {
+    "success": true,
+    "convergence": {
+      "score": 0.7086213655966247,
+      "mean_magnitude": 6.0012257468019365,
+      "std_dev": 1.7486289628495244,
+      "stability_level": "not_assessed"
+    },
+    "gateways": {
+      "S1": {
+        "gateway_label": "Pathway 1",
+        "magnitude_256d": 6.394708570221478
+      },
+      "S2": {
+        "gateway_label": "Pathway 2",
+        "magnitude_256d": 8.095225439141764
+      },
+      "S3A": {
+        "gateway_label": "Pathway 3",
+        "magnitude_256d": 7.076204966420913
+      },
+      "S3B": {
+        "gateway_label": "Pathway 4",
+        "magnitude_256d": 3.512832971270908
+      },
+      "S4": {
+        "gateway_label": "Pathway 5",
+        "magnitude_256d": 7.179135152442806
+      },
+      "S5": {
+        "gateway_label": "Pathway 6",
+        "magnitude_256d": 3.7492473813137486
+      }
+    }
+  },
+  "expected_input_hash": "sha256:d963336c85335d825bb34b90e587b1d947c7bc6045cb8d586c13dd437b012599",
+  "tolerance": {
+    "convergence.score": 7.086213655966248e-10,
+    "convergence.mean_magnitude": 6.001225746801937e-09,
+    "convergence.std_dev": 1.7486289628495244e-09,
+    "gateways.S1.magnitude_256d": 6.394708570221478e-09,
+    "gateways.S2.magnitude_256d": 8.095225439141764e-09,
+    "gateways.S3A.magnitude_256d": 7.076204966420913e-09,
+    "gateways.S3B.magnitude_256d": 3.5128329712709084e-09,
+    "gateways.S4.magnitude_256d": 7.179135152442807e-09,
+    "gateways.S5.magnitude_256d": 3.749247381313749e-09
+  }
+}

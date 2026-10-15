@@ -1,0 +1,62 @@
+{
+  "id": "detect_patterns_experimental_ordering",
+  "tool": "detect_patterns",
+  "args": {
+    "data": [
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5,
+      0.5
+    ]
+  },
+  "verification": "recorded",
+  "source": "live output 2026-10-14",
+  "notes": "Constant series: two scored patterns, then E8_weyl_resonance (experimental, confidence null) sorted after them. That the E8 check fires on a constant series is itself a reason it is labeled experimental.",
+  "record_keys": [
+    "success",
+    "patterns_detected"
+  ],
+  "tolerance": {},
+  "expected": {
+    "success": true,
+    "patterns_detected": [
+      {
+        "type": "polynomial_trend",
+        "confidence": 0.9999999999999999,
+        "experimental": false,
+        "description": "Wildcard: degree-1 polynomial fit  (R² = 1.0000)",
+        "metrics": {
+          "degree": 1,
+          "r_squared": 0.9999999999999999
+        }
+      },
+      {
+        "type": "linear_sequence",
+        "confidence": 0.92,
+        "experimental": false,
+        "description": "Linear (arithmetic) sequence — constant difference 0",
+        "metrics": {
+          "common_difference": 0.0,
+          "std_of_differences": 0.0
+        }
+      },
+      {
+        "type": "E8_weyl_resonance",
+        "confidence": null,
+        "experimental": true,
+        "description": "Experimental, not validated: data projects to E8 Weyl orbit 2 (Dense/Type2)",
+        "metrics": {
+          "orbit_id": 2,
+          "norm_squared_8d": 2.0,
+          "is_on_first_shell": true,
+          "classification": "Dense/Type2"
+        }
+      }
+    ]
+  },
+  "expected_input_hash": "sha256:a51623c74aab77f618417777af2e4a2ce27c808b8130d46714759b0bb30113e2"
+}

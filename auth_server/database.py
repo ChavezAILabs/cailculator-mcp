@@ -108,6 +108,19 @@ class SignupAttempt(Base):
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     success = Column(Integer, default=0, nullable=False)  # 0=failed, 1=success
 
+class CheckoutKeyReveal(Base):
+    """One row per Stripe checkout whose API key has been shown on the success page.
+
+    The key itself is never stored: only its SHA-256 hash, in api_keys. This row makes
+    the reveal one-time: a second visit to the success page finds it and shows no key.
+    """
+    __tablename__ = "checkout_key_reveals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, unique=True, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    revealed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
 class ProcessedStripeEvent(Base):
     __tablename__ = "processed_stripe_events"
 

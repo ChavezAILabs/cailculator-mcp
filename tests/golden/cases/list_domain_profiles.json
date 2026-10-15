@@ -1,0 +1,12 @@
+{
+  "id": "list_domain_profiles",
+  "tool": "list_domain_profiles",
+  "args": {},
+  "verification": "recorded",
+  "source": "live output 2026-09-24",
+  "notes": "Tier and gate status per profile are checked by test_every_profile_has_tier_and_gate_status.",
+  "expected": {
+    "success": true
+  },
+  "expected_input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+}

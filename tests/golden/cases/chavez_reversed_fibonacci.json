@@ -1,0 +1,51 @@
+{
+  "id": "chavez_reversed_fibonacci",
+  "tool": "chavez_transform",
+  "args": {
+    "data": [
+      1597.0,
+      987.0,
+      610.0,
+      377.0,
+      233.0,
+      144.0,
+      89.0,
+      55.0,
+      34.0,
+      21.0,
+      13.0,
+      8.0,
+      5.0,
+      3.0,
+      2.0,
+      1.0
+    ],
+    "alpha": 1.0,
+    "dimension_param": 2
+  },
+  "verification": "recorded",
+  "source": "CHANGELOG [Unreleased] audit 2026-08-21 (reversal invariance)",
+  "notes": "Reversed input. The 1D kernel is invariant under reversal, so transform_value must equal chavez_structured_fibonacci's (checked by test_chavez_reversal_symmetry).",
+  "record_keys": [
+    "success",
+    "transform_value",
+    "stability_bound.M",
+    "stability_bound.satisfied",
+    "stability_bound.ratio"
+  ],
+  "expected": {
+    "success": true,
+    "transform_value": 585.2195275166893,
+    "stability_bound": {
+      "M": 2.9430355293715387,
+      "satisfied": true,
+      "ratio": 0.03516980765303255
+    }
+  },
+  "expected_input_hash": "sha256:76f79dbf997601636b3c436e07323b3e5d567d1cc95cbf185b60561a545cb6f0",
+  "tolerance": {
+    "transform_value": 5.852195275166893e-07,
+    "stability_bound.M": 2.9430355293715387e-09,
+    "stability_bound.ratio": 3.516980765303255e-11
+  }
+}
