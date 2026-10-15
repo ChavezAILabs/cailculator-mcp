@@ -45,7 +45,7 @@
   "false_positive_rate": 0.0,
   "null_series": 200,
   "fp_ceiling": 0.05,
-  "golden_suite": "4",
-  "commit": "3e6e6c1",
-  "checked_at": "2026-10-08T19:19:03Z"
+  "golden_suite": "5",
+  "commit": "9cc0d79",
+  "checked_at": "2026-10-15T05:30:18Z"
 }
