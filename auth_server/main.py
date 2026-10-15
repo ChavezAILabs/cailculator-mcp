@@ -75,7 +75,7 @@ if (os.getenv("STRIPE_SECRET_KEY") or "").startswith("sk_test_") and STRIPE_PRIC
 PRICE_TO_TIER = {price: tier for tier, price in STRIPE_PRICES.items()}
 
 # Admin endpoints (/admin/...) require this token in the X-Admin-Token header.
-# Unset = admin endpoints disabled (503).
+# Unset, empty or whitespace-only = admin endpoints disabled (503). Surrounding spaces are ignored.
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
 
 # Domain profiles included in each plan. Must match PLAN_PROFILES in
@@ -1011,10 +1011,11 @@ class AdminIssueRequest(BaseModel):
     rotate: bool = False  # True: revoke the user's existing keys first
 
 def _require_admin(request: Request) -> None:
-    if not ADMIN_TOKEN:
+    token = (ADMIN_TOKEN or "").strip()
+    if not token:
         raise HTTPException(status_code=503, detail="Admin endpoints are disabled")
     supplied = request.headers.get("x-admin-token", "")
-    if not secrets.compare_digest(supplied.encode(), ADMIN_TOKEN.encode()):
+    if not secrets.compare_digest(supplied.encode(), token.encode()):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 @app.post("/admin/keys/issue")
