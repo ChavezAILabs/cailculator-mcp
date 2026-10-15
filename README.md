@@ -6,7 +6,7 @@
 
 **Applied Pathological Mathematics™** was born from this hypothesis:
 
-> *Higher-dimensional algebras following the Cayley-Dickson sequence—often dismissed as "pathological"—can be interpreted and exploited for computational advantage, specifically for AGI research and the development of structure-preserving embeddings.*
+> *Higher-dimensional algebras following the Cayley-Dickson sequence—often dismissed as "pathological"—can be interpreted and exploited for computational advantage.*
 
 CAILculator puts that hypothesis to work — a Model Context Protocol (MCP) server that empowers AI agents to analyze and compute within high-dimensional algebraic spaces (16D sedenions to 256D), exposing the Chavez Transform and the Zero Divisor Transmission Protocol (ZDTP) as experimental measurements, with Lean 4 proofs of the gateway zero-divisor identities and of the Chavez Transform's stability bound.
 
