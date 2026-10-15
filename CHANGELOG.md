@@ -304,6 +304,16 @@ cited without their controls) and has since been removed.
     real Stripe test mode.
   - Keys issued before this change appear in plain text in Railway's log history.
     Revoke them once replacements are issued.
+  - An empty or whitespace-only `ADMIN_TOKEN` disables the admin endpoints (503), like an
+    unset one. The checks are in the repo: `auth_server/tests/check_auth.py` (45 checks;
+    SQLite by default, Postgres via `CHECK_AUTH_DATABASE_URL`).
+  - **Dependencies pinned exactly** (`auth_server/requirements.txt`). A Railway rebuild on
+    2026-10-15 pulled SQLAlchemy 2.1, which maps `postgresql://` to the psycopg v3 driver,
+    and crashed at startup with `No module named 'psycopg'` (only psycopg2 is installed).
+    Now SQLAlchemy 2.0.54 with psycopg2-binary 2.9.13, and every other direct dependency
+    pinned. Checked with a clean install: 45/45 on SQLite and on a local Postgres 17.11, and
+    startup on an existing database creates the missing `checkout_key_reveals` table and
+    keeps existing rows. Stripe 16.0.0 is pinned but only exercised with Stripe faked.
 
 ### Not changed (flagged for Paul)
 - `GET /usage/{api_key}` (auth server) takes the API key in the URL path, so keys can reach

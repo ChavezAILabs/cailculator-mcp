@@ -17,8 +17,11 @@ from pathlib import Path
 
 AUTH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
 tmp = Path(tempfile.mkdtemp(prefix="authtest-"))
+# Default: a fresh SQLite file. To test on Postgres, set CHECK_AUTH_DATABASE_URL to an EMPTY
+# throwaway database (never production: the checks create users and keys). DATABASE_URL from
+# the shell is ignored on purpose.
 os.environ.update({
-    "DATABASE_URL": f"sqlite:///{(tmp / 'auth.db').as_posix()}",
+    "DATABASE_URL": os.environ.get("CHECK_AUTH_DATABASE_URL") or f"sqlite:///{(tmp / 'auth.db').as_posix()}",
     "ADMIN_TOKEN": "test-admin-token",
     "STRIPE_SECRET_KEY": "sk_test_dummy",
 })
@@ -194,7 +197,7 @@ with TestClient(main.app) as c:
 for name, ok, detail in results:
     print(f"{'PASS' if ok else 'FAIL'}  {name}" + ("" if ok else f"   {detail}"))
 passed = sum(ok for _, ok, _ in results)
-print(f"\n{passed}/{len(results)} passed")
+print(f"\n{passed}/{len(results)} passed on {engine.dialect.name} (driver {engine.dialect.driver})")
 os.chdir(AUTH)
 engine.dispose()  # release the SQLite file so the temp folder can be removed
 shutil.rmtree(tmp, ignore_errors=True)
