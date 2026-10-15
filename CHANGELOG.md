@@ -223,6 +223,15 @@ profiles. A validated replacement is planned for a later release.
 - `quant_equity_analyze_gbm`: expected gateway labels changed to `S1`…`S5` (quant_equity
   3.0.0, above). Magnitudes, input hash and every other expected value are unchanged.
 
+### Golden suite 4 → 5
+- Six cases added for the 2026-10-14 output fields (all `recorded`; no existing case changed):
+  `cd32_xor29_pair1` and `clifford32_xor29_pair1` ((e₅+e₂₄)(e₇+e₂₆): bilateral in both
+  frameworks); `cd32_xor21_pair2` and `clifford32_xor21_pair2` ((e₁+e₂₀)(e₁₀+e₃₁):
+  bilateral in Cayley-Dickson, not in Cl(5,0), ‖PQ‖ = ‖QP‖ = 2). All four pin
+  `provenance.signature` (`null` or `Cl(5,0)`). `detect_patterns_experimental_g2_e8` and
+  `detect_patterns_experimental_ordering` pin `confidence: null` and `experimental: true`
+  for the two experimental checks and their sorting after scored patterns.
+
 ### Changed — profile tiers
 **First gate run** (suite v1, 200 seeded null series, 5% FP ceiling):
 general_data, quant_equity and rhi all failed G2 and G3, each with 200/200 null series
@@ -247,6 +256,30 @@ cited without their controls) and has since been removed.
   all. This is not evidence that a detector works.
 
 ### Changed — corrections audit, 2026-10-14 (`docs/devnotes/CORRECTIONS_AUDIT_20261014.md`)
+- **`detect_patterns` and `analyze_dataset` (outputs change):** `G2_invariant_structure` and
+  `E8_weyl_resonance` are now reported with `confidence: null` and `experimental: true`,
+  instead of fixed confidences of 0.9 and 0.95 that no test supported. Their descriptions
+  start "Experimental, not validated". Every pattern now carries an `experimental` flag.
+  Sorting puts scored patterns first, by confidence, then unscored ones, so in
+  `analyze_dataset`'s `top_patterns` the experimental checks rank after every scored pattern.
+  No golden case expected either pattern type, so no golden value changed (see "Golden
+  suite" below for the run).
+- **Tool descriptions:** `detect_patterns` now says what it checks (it said "using verified
+  algebraic structures"); `verify_bilateral_oracle` is described as a numerical check with
+  a 1e-15 threshold (it said "Exact … at 10^-15 precision"); `map_e8_orbit` is marked
+  experimental and no longer says "verified" orbits.
+- **`provenance.signature`** (new, additive): the Clifford metric signature a call actually
+  used, e.g. `Cl(5,0)` for a 32D `verify_bilateral_oracle` call (`Cl(n,0)`, n = log₂
+  dimension; every generator squares to +1). `null` otherwise. Whether a pair is a Clifford
+  zero divisor can depend on the signature: at 32D, (e₁+e₂₀, e₁₀+e₃₁) is a zero divisor in
+  Cayley-Dickson but gives ‖PQ‖ = ‖QP‖ = 2 in Cl(5,0), and other signatures, which the tool
+  does not offer, can give a different answer. Found in a post-format test. The tool
+  description now names the signature too.
+- **Removed the unlisted `regime_detection` route.** It could be called by name but was not
+  in `tools/list`; it returned `not_assessed`. The server's callable tools now equal its
+  listed tools (10).
+- `config.py`: Pydantic `class Config` replaced by `model_config = SettingsConfigDict(...)`
+  (deprecated in Pydantic 2, removed in 3). Same settings.
 - **Auth server (deploy separately, to Railway):**
   - Removed `POST /migrate-db`, which was unauthenticated and wrote to the production
     database. Schema changes run at startup.

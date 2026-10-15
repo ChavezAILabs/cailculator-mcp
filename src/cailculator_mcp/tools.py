@@ -1,6 +1,6 @@
 """
-CAILculator v2.0 Tools - Production
-Tool definitions governed by High-Precision Engine and Oracle Layer
+CAILculator Tools
+Tool definitions (TOOLS_DEFINITIONS), routing and implementations.
 """
 
 import asyncio
@@ -37,7 +37,7 @@ TOOLS_DEFINITIONS = [
     },
     {
         "name": "detect_patterns",
-        "description": "Detect mathematical patterns (v2.0) using verified algebraic structures.",
+        "description": "Checks a numeric series for simple patterns: linear, geometric and Fibonacci-type sequences, polynomial trend, and conjugate, anti-, cyclic and bilateral symmetry. Each of these carries a confidence that is a fixed value per pattern type or a fit measure, not a probability. Two further checks, G2_invariant_structure and E8_weyl_resonance, are experimental and not validated: they are reported with experimental=true and confidence null.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -49,7 +49,7 @@ TOOLS_DEFINITIONS = [
     },
     {
         "name": "verify_bilateral_oracle",
-        "description": "Exact P*Q=0 and Q*P=0 check at 10^-15 precision for any two vectors.",
+        "description": "Numerical check that P*Q and Q*P are both zero for any two vectors: reports the norms ||PQ|| and ||QP|| and declares the pair bilateral when both are below 1e-15. Runs in the Cayley-Dickson or Clifford framework. The Clifford framework uses the positive signature Cl(n,0) with n = log2(dimension) (every generator squares to +1; 16D sedenion indices map to Cl(4,0) blades by bitmask); other signatures are not available, and they can give different answers. The signature used is reported in provenance.signature.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -62,7 +62,7 @@ TOOLS_DEFINITIONS = [
     },
     {
         "name": "map_e8_orbit",
-        "description": "Projects the first 8 components (octonion half) of a 16D/32D input onto verified E8 Weyl orbits. Components e8-e15 of a 16D sedenion input are not included in the projection; a full-sedenion input returning is_on_first_shell=false is expected behavior.",
+        "description": "Experimental. Projects the first 8 components (octonion half) of a 16D/32D input onto E8 first-shell Weyl orbits. Components e8-e15 of a 16D sedenion input are not included in the projection; a full-sedenion input returning is_on_first_shell=false is expected behavior.",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -214,7 +214,7 @@ TOOLS_DEFINITIONS = [
 
 # --- Tool Routing ---
 
-_KNOWN_TOOLS = {t["name"] for t in TOOLS_DEFINITIONS} | {"regime_detection"}
+_KNOWN_TOOLS = {t["name"] for t in TOOLS_DEFINITIONS}
 
 
 async def call_tool(name: str, arguments: Dict[str, Any], plan: Optional[str] = None) -> Dict[str, Any]:
@@ -270,9 +270,6 @@ async def _route(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         return await compute_high_dimensional(arguments)
     elif name == "get_version":
         return await get_version(arguments)
-    elif name == "regime_detection":
-        from .regime_detection import regime_detection
-        return await regime_detection(arguments)
     else:
         raise ValueError(f"Unknown tool: {name}")
 
@@ -430,7 +427,8 @@ async def detect_patterns(arguments: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "success": True,
             "patterns_detected": [
-                {"type": p.pattern_type, "confidence": p.confidence, "description": p.description, "metrics": p.metrics}
+                {"type": p.pattern_type, "confidence": p.confidence, "experimental": p.experimental,
+                 "description": p.description, "metrics": p.metrics}
                 for p in patterns
             ]
         }
@@ -447,8 +445,14 @@ async def verify_bilateral_oracle(arguments: Dict[str, Any]) -> Dict[str, Any]:
             raise ValueError(f"framework must be 'cayley-dickson' or 'clifford', got {fw!r}")
         P = _parse_numeric_data(arguments.get("P"), "P")
         Q = _parse_numeric_data(arguments.get("Q"), "Q")
+        dim = int(len(P))
+        # Clifford products use the positive signature Cl(n,0), n = log2(dimension):
+        # every generator squares to +1 (core/clifford_element.py). The answer depends on it.
+        signature = None
+        if fw == "clifford" and dim > 0 and dim & (dim - 1) == 0:
+            signature = f"Cl({dim.bit_length() - 1},0)"
         report(
-            algorithm=f"bilateral_oracle.{fw}/1", framework=fw, dimension=int(len(P)),
+            algorithm=f"bilateral_oracle.{fw}/1", framework=fw, dimension=dim, signature=signature,
             tolerance={"zero_threshold": _ORACLE_ZERO_THRESHOLD},
             inputs={"P": P, "Q": Q, "framework": fw},
         )
@@ -594,7 +598,7 @@ async def analyze_dataset(arguments: Dict[str, Any]) -> Dict[str, Any]:
         import numpy as np
         from .core.chavez_transform import ChavezTransform
         from .core.canonical_six import get_canonical_six
-        from .patterns import PatternDetector
+        from .patterns import PatternDetector, by_confidence
         from .zdtp.protocol import get_zdtp_v2
         from .profiles.manager import ProfileManager
         from . import __version__
@@ -682,10 +686,11 @@ async def analyze_dataset(arguments: Dict[str, Any]) -> Dict[str, Any]:
                 "top_patterns": [
                     {
                         "type": p.pattern_type,
-                        "confidence": round(float(p.confidence), 3),
+                        "confidence": None if p.confidence is None else round(float(p.confidence), 3),
+                        "experimental": p.experimental,
                         "description": p.description
                     }
-                    for p in sorted(patterns, key=lambda p: p.confidence, reverse=True)[:3]
+                    for p in sorted(patterns, key=by_confidence, reverse=True)[:3]
                 ]
             },
             "gateway_breakdown": gateway_breakdown,

@@ -1,11 +1,11 @@
 """
-Pattern Detection - CAILculator v2.0 Staging
-Structural Analysis governed by Lean-Verified Theorems
+Pattern Detection - CAILculator
 
-Refactored to use:
-- detect_24_family() for algebraic membership
-- map_to_weyl_orbit() for geometric projection
-- ChavezTransform core for structural numerics
+Simple pattern checks on a numeric series: linear, geometric and Fibonacci-type
+sequences, polynomial trend, and symmetry checks. Two further checks are
+experimental and not validated: G2 family alignment (detect_g2_family) and E8
+first-shell projection (map_to_weyl_orbit). They are reported with
+experimental=True and no confidence score.
 """
 
 import numpy as np
@@ -22,10 +22,16 @@ logger = logging.getLogger(__name__)
 class Pattern:
     """Represents a detected mathematical pattern."""
     pattern_type: str
-    confidence: float
+    confidence: Optional[float]  # None for experimental checks, which have no validated score
     description: str
     indices: Optional[List[int]] = None
     metrics: Optional[Dict[str, Any]] = None
+    experimental: bool = False
+
+
+def by_confidence(p: "Pattern"):
+    """Sort key, used with reverse=True: scored patterns by confidence, then unscored ones."""
+    return (p.confidence is not None, p.confidence or 0.0)
 
 class PatternDetector:
     """
@@ -54,7 +60,7 @@ class PatternDetector:
         # 4. Traditional Symmetry (Refined)
         patterns.extend(self._detect_symmetry_v2(data))
 
-        patterns.sort(key=lambda p: p.confidence, reverse=True)
+        patterns.sort(key=by_confidence, reverse=True)
         return patterns
 
     def _detect_numerical_patterns(self, data: np.ndarray) -> List[Pattern]:
@@ -118,9 +124,10 @@ class PatternDetector:
         if res["is_g2_candidate"]:
             patterns.append(Pattern(
                 pattern_type="G2_invariant_structure",
-                confidence=0.9,
-                description="Data aligns with G2-invariant bilateral families",
-                metrics=res
+                confidence=None,
+                description="Experimental, not validated: data passes the G2 bilateral-family check",
+                metrics=res,
+                experimental=True,
             ))
         return patterns
 
@@ -131,9 +138,10 @@ class PatternDetector:
         if res["is_on_first_shell"]:
             patterns.append(Pattern(
                 pattern_type="E8_weyl_resonance",
-                confidence=0.95,
-                description=f"Data projects to E8 Weyl Orbit {res['orbit_id']} ({res['classification']})",
-                metrics=res
+                confidence=None,
+                description=f"Experimental, not validated: data projects to E8 Weyl orbit {res['orbit_id']} ({res['classification']})",
+                metrics=res,
+                experimental=True,
             ))
         return patterns
 

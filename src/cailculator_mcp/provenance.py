@@ -128,8 +128,9 @@ def build_info() -> Dict[str, Any]:
 def report(**fields: Any) -> None:
     """Called by a tool to describe what it actually did.
 
-    Recognized fields: algorithm, framework, dimension, tolerance, inputs
-    (the normalized inputs to hash), profile (name string).
+    Recognized fields: algorithm, framework, signature (Clifford metric signature,
+    e.g. "Cl(5,0)"), dimension, tolerance, inputs (the normalized inputs to hash),
+    profile (name string).
     """
     rec = _collector.get()
     if rec is not None:
@@ -172,6 +173,7 @@ def build_provenance(tool: str, raw_arguments: Any, record: Dict[str, Any]) -> D
         "tool": tool,
         "algorithm": record.get("algorithm", f"{tool}/unreported"),
         "framework": record.get("framework"),
+        "signature": record.get("signature"),
         "dimension": record.get("dimension"),
         "profile": profile,
         "plan": current_plan(),

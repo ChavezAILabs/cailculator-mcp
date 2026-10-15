@@ -15,6 +15,7 @@ response fields and never replaces them.
   "tool": "compute_high_dimensional",
   "algorithm": "cayley_dickson.is_zero_divisor/1",
   "framework": "cayley-dickson",
+  "signature": null,
   "dimension": 64,
   "profile": null,
   "plan": "individual",
@@ -38,6 +39,7 @@ response fields and never replaces them.
 | `tool` | Tool that ran. |
 | `algorithm` | Stable ID with a version suffix, e.g. `bilateral_oracle.clifford/1`. The suffix is bumped whenever the math or a default changes, even if nothing else in the release does. `<tool>/unreported` means the call failed before the tool described itself. |
 | `framework` | `cayley-dickson`, `clifford`, or `null` when no algebra product is involved. |
+| `signature` | Clifford metric signature actually used, e.g. `Cl(5,0)` for a 32D `verify_bilateral_oracle` call (Cl(n,0), n = log₂ dimension; every generator squares to +1). Whether a pair is a zero divisor can depend on the signature. `null` for Cayley-Dickson and for tools with no Clifford product. Added 2026-10-14. |
 | `dimension` | Algebra dimension used, or `null` for multi-dimension pipelines (`analyze_dataset`). |
 | `profile` | `null`, or `{name, version, tier, gate_status}`. An `Experimental` profile also carries `gates_failed` and a plain `notice` explaining why. |
 | `plan` | The caller's subscription plan, which decides the profiles it may use (`plans.py`). `"developer"` for dev keys in a source checkout; `null` for in-process calls made without a plan. |
