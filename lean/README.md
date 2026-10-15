@@ -10,7 +10,13 @@ The standard in mathematical research is peer review: human experts read a proof
 
 Lean 4 is a formal proof assistant — a programming language in which mathematical statements are propositions and proofs are programs the compiler type-checks. A proof that compiles in Lean 4 is not *argued* to be correct; it is *verified* to be correct by the type system, all the way down to a small, auditable kernel. No step can be skipped, no hand-wave accepted.
 
-This matters especially for high-dimensional nonassociative algebra, where human intuition about commutativity, associativity, and zero behavior regularly fails. The sedenion multiplication table has 256 entries. CAILculator's zero divisor identities are products of specific index combinations in that table. Lean 4 verifies that every claimed identity holds — not approximately, not symbolically, but exactly.
+This matters especially for high-dimensional nonassociative algebra, where human intuition about commutativity, associativity, and zero behavior regularly fails. The sedenion multiplication table has 256 entries. CAILculator's zero divisor identities are products of specific index combinations in that table. Lean 4 checks that each claimed identity holds exactly, not approximately. Some files below check these identities with `native_decide`, which relies on compiled code instead of the kernel; see the next section.
+
+### What `native_decide` means
+
+For a finite check such as "this product of two sedenions is zero", Lean offers two tactics. `decide` asks the kernel to evaluate the check itself, so the result is kernel-verified. `native_decide` compiles the check to machine code, runs it, and records the result through the axiom `Lean.ofReduceBool`. The kernel then trusts the compiler's answer without re-checking the computation. A theorem proved this way lists `Lean.ofReduceBool` in its `#print axioms` footprint, and its trusted base includes the Lean compiler, not only the kernel. Mathlib does not accept `native_decide`.
+
+In this directory, `RHForcingArgument.lean` (the 18 Pattern theorems in Part 1, 36 calls) and `e8_weyl_orbit_unification.lean` (`Theorem_1a`, `Theorem_1b`) use `native_decide`. `BilateralCollapse.lean` does not: its proofs expand the products component by component and close them with `norm_num`. The word appears in that file only inside comments.
 
 ### The current moment
 
@@ -28,7 +34,7 @@ Key proofs in this directory were submitted to **Aristotle** (Harmonic Math's in
 
 ## The Verified Chain
 
-This directory contains exactly the files that form the proven chain — nothing else. Three foundational proofs anchor the CAILculator engine; twelve files extend that foundation through the CAIL-RH Investigation into a formal forcing argument for the Riemann Hypothesis.
+This directory contains exactly the files that form the chain, and nothing else. Three foundational files anchor the CAILculator engine. Twelve files extend that foundation through the CAIL-RH Investigation into a forcing argument whose final theorem is conditional on the Riemann Hypothesis itself, taken as an axiom (see `RiemannHypothesisProof.lean` below).
 
 ### Foundational proofs (engine core)
 
@@ -50,7 +56,7 @@ Any product of two elements drawn from the span of a gateway pair, with matched 
 
 **`scalar_channel`** — Existence form of the above: such a product always lands in `ℝ · e₀`.
 
-Axiom footprint: `[propext, Classical.choice, Quot.sound]` — the standard Mathlib axioms. No non-standard assumptions.
+Axiom footprint: `[propext, Classical.choice, Quot.sound]`, the standard Mathlib axioms. The file uses no `native_decide` (the proofs expand each product and close it with `norm_num`). This footprint is to be re-confirmed with `#print axioms` on a build. The file proves the identity for S1 only; the bilateral identities for all six pairs are in `RHForcingArgument.lean`, by `native_decide`.
 
 ---
 
@@ -78,19 +84,19 @@ Axiom footprint: `[propext, Classical.choice, Quot.sound]`. Zero sorry stubs. Ve
 
 An exploratory result connecting the Canonical Six P-vectors to E8 lattice structure. This is the most preliminary of CAILculator's formal components — active research, not a closed theorem.
 
-**`Theorem_1a`** — The five distinct P-vectors of the Canonical Six all have norm² = 2, consistent with lying on the E8 first shell.
+**`Theorem_1a`** — The five distinct P-vectors of the Canonical Six all have norm² = 2, consistent with lying on the E8 first shell. Proved by `native_decide`.
 
-**`Theorem_1b`** — The antipodal pair: v₂ + v₃ = 0, and the single simple Weyl reflection s_{α₄} maps v₂ to v₃.
+**`Theorem_1b`** — The antipodal pair: v₂ + v₃ = 0, and the single simple Weyl reflection s_{α₄} maps v₂ to v₃. Proved by `native_decide`.
 
 **`Theorem_1c`** — All five P-vectors reduce to the same dominant weight λ under specific Weyl group reduction sequences — evidence for a single Weyl orbit.
 
-Axiom footprint: `[propext, Classical.choice, Quot.sound, Nat.rec]`. What this does not prove: the full 240-root E8 orbit structure, or that the six gateways are *only* on the E8 first shell. The associated tooling (`map_e8_orbit`) is marked experimental in the MCP server accordingly.
+Axiom footprint: `Theorem_1a` and `Theorem_1b` add `Lean.ofReduceBool` to the standard three (`native_decide`); per-theorem footprints are to be confirmed with `#print axioms` on a build. An earlier version of this page listed `Nat.rec` as an axiom; it is a recursor, not an axiom. What this does not prove: the full 240-root E8 orbit structure, or that the six gateways are *only* on the E8 first shell. The associated tooling (`map_e8_orbit`) is marked experimental in the MCP server accordingly.
 
 ---
 
 ### CAIL-RH Investigation (Phases 58–70)
 
-The following twelve files form a single linear import chain — each imports the one before it — constituting a formal forcing argument for the Riemann Hypothesis. The chain begins with the bilateral zero divisor algebra proved in `BilateralCollapse.lean` and `RHForcingArgument.lean`, builds through analytic structure theorems, and terminates at `RiemannHypothesisProof.lean`.
+The following twelve files form a single linear import chain, each importing the one before it. They make up a forcing argument whose final theorem assumes the Riemann Hypothesis as an axiom, so the chain does not prove RH (see `RiemannHypothesisProof.lean` below and the CAIL-RH Investigation corrections register, C-021). The chain begins with the bilateral zero divisor algebra proved in `BilateralCollapse.lean` and `RHForcingArgument.lean`, builds through analytic structure theorems, and terminates at `RiemannHypothesisProof.lean`.
 
 The chain is live research, not a closed book. The honest framing of where it stands is in the final file.
 
@@ -113,7 +119,7 @@ RHForcingArgument
 
 The algebraic core of the RH investigation. Contains two parts merged in one file.
 
-**Part 1 (over ℚ):** All six Canonical Six pairs proved bilateral at CD4, CD5, and CD6 (16D, 32D, 64D). All six commutators `[Pi, Qi] = 0` proved at each level. 18 bilateral theorems + 18 commutator vanishing theorems. Zero sorry stubs.
+**Part 1 (over ℚ):** All six Canonical Six pairs bilateral at CD4, CD5, and CD6 (16D, 32D, 64D), and all six commutators `[Pi, Qi] = 0` at each level: 18 Pattern theorems, each a bilateral identity and a commutator identity, proved by `native_decide` (36 calls). Zero sorry stubs. These theorems add `Lean.ofReduceBool` to their axiom footprint.
 
 **Part 2 (over ℝ):** The forcing skeleton using `EuclideanSpace ℝ (Fin 16)`. Proves:
 
@@ -164,7 +170,7 @@ The Euler product bridge. Establishes that the structural inducement conditions 
 
 #### `RiemannHypothesisProof.lean` — Phase 70
 
-The final theorem:
+The final theorem. It is conditional: the proof uses the axiom `riemann_critical_line`, which is the Riemann Hypothesis itself, so the theorem restates its own assumption and does not prove RH.
 
 ```lean
 theorem riemann_hypothesis (s : ℂ)
@@ -190,7 +196,7 @@ axiom riemann_critical_line (s : ℂ)
     s.re = 1 / 2
 ```
 
-This is not a flaw in the proof — it is the proof's current boundary. `#print axioms` is transparent about it: `sorryAx` is absent, and every other inference step is machine-verified. The chain proves that the algebraic forcing argument is internally consistent and that commutator vanishing is structurally equivalent to critical-line uniqueness. The gap axiom names exactly what remains to be closed for the chain to become self-contained.
+Because this axiom is the statement being "proved", `riemann_hypothesis` follows from it directly; the chain adds nothing to the evidence about where the zeros of ζ lie. `#print axioms` reports this openly, and `sorryAx` is absent. What the chain does show, conditional on that axiom, is that the algebraic forcing argument is internally consistent and that commutator vanishing is equivalent to `σ = 1/2` for the objects defined here. Those objects are built to vanish on the critical line, so this equivalence is not evidence about the critical line either (CAIL-RH register, C-021). Closing the gap would mean proving `riemann_critical_line`, which is RH.
 
 The investigation continues.
 
@@ -200,12 +206,14 @@ The investigation continues.
 
 | File | Axiom footprint | Status |
 |---|---|---|
-| `BilateralCollapse.lean` | `[propext, Classical.choice, Quot.sound]` | Zero sorry — complete |
+| `BilateralCollapse.lean` | `[propext, Classical.choice, Quot.sound]` (no `native_decide`; to be re-confirmed on a build) | Zero sorry — complete |
 | `ChavezTransform_genuine.lean` | `[propext, Classical.choice, Quot.sound]` | Zero sorry — complete |
-| `e8_weyl_orbit_unification.lean` | `[propext, Classical.choice, Quot.sound, Nat.rec]` | Zero sorry — exploratory |
-| `RHForcingArgument.lean` | `[propext, Classical.choice, Quot.sound]` | Zero sorry — complete |
-| RH chain (Phases 58–69) | `[riemann_critical_line, propext, Classical.choice, Quot.sound]` | Zero sorry — active |
-| `RiemannHypothesisProof.lean` | `[riemann_critical_line, propext, Classical.choice, Quot.sound]` | Zero sorry — open gap named |
+| `e8_weyl_orbit_unification.lean` | Standard three, plus `Lean.ofReduceBool` for `Theorem_1a`/`1b` (`native_decide`) | Zero sorry — exploratory |
+| `RHForcingArgument.lean` | Standard three for the Part 2 theorems once checked; the 18 Part 1 Pattern theorems add `Lean.ofReduceBool` (`native_decide`). Per-theorem footprints pending | Zero sorry — see CAIL-RH register C-024 |
+| RH chain (Phases 58–69) | `[riemann_critical_line, propext, Classical.choice, Quot.sound]` | Zero sorry — conditional on RH as an axiom |
+| `RiemannHypothesisProof.lean` | `[riemann_critical_line, propext, Classical.choice, Quot.sound]` | Zero sorry — conditional on RH as an axiom; does not prove RH |
+
+Recorded `#print axioms` output exists for the Chavez Transform and RH-chain theorems (in the CAIL-RH Investigation repository's `verification/` folder). The other rows are inferred from the source, and where a file uses `native_decide`, the footprint is inferred from where it is used.
 
 ---
 
@@ -223,7 +231,7 @@ The investigation continues.
 
 Lean proofs are not called at runtime. The relationship is:
 
-1. `BilateralCollapse.lean` proves which gateway coordinate pairs are bilateral zero divisors and what their collapse formula is.
+1. `BilateralCollapse.lean` proves the bilateral identity and collapse formula for S1; `RHForcingArgument.lean` proves the bilateral identities for all six pairs (by `native_decide`).
 2. Those coordinates are hardcoded as constants in `src/cailculator_mcp/core/canonical_six.py`, attributed to `BilateralCollapse.lean`.
 3. At runtime, `verify_bilateral_collapse()` independently reconfirms the bilateral property numerically at 10⁻¹⁵ via numpy — not a Lean call, but an independent arithmetic gate that runs on every transmission.
 
