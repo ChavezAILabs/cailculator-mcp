@@ -246,7 +246,35 @@ cited without their controls) and has since been removed.
   only because `measured_only` withholds every verdict: it makes no structural claims at
   all. This is not evidence that a detector works.
 
+### Changed — corrections audit, 2026-10-14 (`docs/devnotes/CORRECTIONS_AUDIT_20261014.md`)
+- **Auth server (deploy separately, to Railway):**
+  - Removed `POST /migrate-db`, which was unauthenticated and wrote to the production
+    database. Schema changes run at startup.
+  - **API keys are no longer printed to the logs.** The checkout webhook now provisions the
+    user only. The key is created on the checkout success page and shown there once; only
+    its SHA-256 hash is stored. A new `checkout_key_reveals` table (one row per checkout
+    session, created at startup by `init_db`) makes the reveal one-time; a reload shows
+    "already shown". Responses carry `Cache-Control: no-store`.
+  - Admin endpoints, enabled only when `ADMIN_TOKEN` is set and authenticated by the
+    `X-Admin-Token` header (`secrets.compare_digest`): `POST /admin/keys/issue` (issue a key
+    for an existing user; `rotate: true` revokes their other keys first; the key is returned
+    once), `GET /admin/keys` (every key's id, owner, dates and hash prefix, never the key),
+    `DELETE /admin/keys/{id}` (revoke).
+  - Stripe price IDs can be set per plan with `STRIPE_PRICE_ID_<TIER>` (e.g.
+    `STRIPE_PRICE_ID_INDIVIDUAL`), so a test-mode or staging deploy can use test-mode prices
+    without a code change. Unset, they default to the live-mode IDs, so the production
+    deploy needs no new configuration. A test-mode secret key with all-live prices logs a
+    warning at startup.
+  - Tested locally (SQLite, Stripe faked; 34 checks): one-time reveal and reload, webhook
+    and success page in either order, admin token missing, wrong or unset, issue, rotate
+    and revoke, existing keys still validating, `/migrate-db` gone. Not yet tested against
+    real Stripe test mode.
+  - Keys issued before this change appear in plain text in Railway's log history.
+    Revoke them once replacements are issued.
+
 ### Not changed (flagged for Paul)
+- `GET /usage/{api_key}` (auth server) takes the API key in the URL path, so keys can reach
+  access logs. Move it to a header in a later release.
 - The two zero-divisor thresholds (1e-10 vs 1e-15) are unchanged and now documented. The
   decision is open (see `EVALUATION_CONTRACT.md`).
 
