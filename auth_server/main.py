@@ -3,7 +3,7 @@ CAILculator Auth Server - FastAPI Backend for Railway
 Handles API key validation and usage tracking
 """
 
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -300,21 +300,23 @@ async def log_usage(request: UsageRequest, db: Session = Depends(get_db)):
 
     return {"status": "logged"}
 
-@app.get("/usage/{api_key}")
-async def get_usage(api_key: str, db: Session = Depends(get_db)):
+@app.get("/usage")
+async def get_usage(x_api_key: Optional[str] = Header(None), db: Session = Depends(get_db)):
     """
-    Get usage statistics for an API key
+    Get usage statistics for the API key in the X-API-Key header.
+    The key is never taken from the URL, where it would reach access logs and proxies
+    (until 2026-10-22 this was GET /usage/{api_key}).
     """
-    # Hash the provided key
-    import hashlib
+    api_key = (x_api_key or "").strip()
+    if not api_key:
+        raise HTTPException(status_code=401, detail="Missing X-API-Key header")
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
 
     # Find API key
     key_record = db.query(APIKey).filter(APIKey.key_hash == key_hash).first()
-    if not key_record:
+    user = key_record and db.query(User).filter(User.id == key_record.user_id).first()
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid API key")
-
-    user = db.query(User).filter(User.id == key_record.user_id).first()
 
     # Count usage in last 30 days
     from datetime import timedelta
@@ -326,14 +328,14 @@ async def get_usage(api_key: str, db: Session = Depends(get_db)):
 
     limit = TIER_LIMITS.get(user.tier.value, 100)
 
-    return {
+    return JSONResponse({
         "user_id": user.id,
         "email": user.email,
         "tier": user.tier.value,
         "usage_30_days": usage_count,
         "limit": limit if limit != -1 else "unlimited",
         "remaining": (limit - usage_count) if limit != -1 else "unlimited"
-    }
+    }, headers=NO_STORE)
 
 # =============================================================================
 # STARTUP/SHUTDOWN

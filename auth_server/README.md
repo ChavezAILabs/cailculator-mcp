@@ -55,8 +55,10 @@ POST /log-usage
 
 #### Get Usage Stats
 ```
-GET /usage/{api_key}
+GET /usage
+X-API-Key: cail_...
 ```
+The key goes in the header, never the URL.
 
 ## Local Development
 

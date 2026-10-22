@@ -228,6 +228,16 @@ with TestClient(main.app) as c:
     # --- /migrate-db gone ---
     check("/migrate-db -> 404", c.post("/migrate-db").status_code == 404)
 
+    # --- /usage takes the key from the X-API-Key header, never the URL ---
+    r = c.get("/usage", headers={"X-API-Key": key4})
+    check("usage via header ok", r.status_code == 200 and r.json().get("email") == "alice@example.com", r.text)
+    check("usage no-store", r.headers.get("cache-control") == "no-store")
+    check("usage response contains no key", "cail_" not in r.text)
+    check("usage: no header -> 401", c.get("/usage").status_code == 401)
+    check("usage: blank header -> 401", c.get("/usage", headers={"X-API-Key": "  "}).status_code == 401)
+    check("usage: wrong key -> 401", c.get("/usage", headers={"X-API-Key": "cail_nope"}).status_code == 401)
+    check("usage: key in URL path -> 404", c.get(f"/usage/{key4}").status_code == 404)
+
     # --- Leftover free-signup path gone (it issued paid-tier keys without payment) ---
     users_before = count(User)
     check("POST /signup -> 404",

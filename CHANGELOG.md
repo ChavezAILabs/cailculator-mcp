@@ -305,7 +305,7 @@ cited without their controls) and has since been removed.
   - Keys issued before this change appear in plain text in Railway's log history.
     Revoke them once replacements are issued.
   - An empty or whitespace-only `ADMIN_TOKEN` disables the admin endpoints (503), like an
-    unset one. The checks are in the repo: `auth_server/tests/check_auth.py` (57 checks;
+    unset one. The checks are in the repo: `auth_server/tests/check_auth.py` (64 checks;
     SQLite by default, Postgres via `CHECK_AUTH_DATABASE_URL`).
   - **Dependencies pinned exactly** (`auth_server/requirements.txt`). A Railway rebuild on
     2026-10-15 pulled SQLAlchemy 2.1, which maps `postgresql://` to the psycopg v3 driver,
@@ -343,10 +343,13 @@ cited without their controls) and has since been removed.
     sending failed. SendGrid is gone: `sendgrid` and `requests` leave `requirements.txt`
     and the `SENDGRID_*` variables leave `.env.example`. The database keeps its columns
     and the `signup_attempts` table. 5 new checks; against the old code 4 fail.
+  - **`GET /usage` takes the API key from the `X-API-Key` header.** It was
+    `GET /usage/{api_key}`, which put keys in access logs and proxy logs; that path now
+    returns 404. A missing, blank or unknown key gets 401 (a key whose user no longer
+    exists used to crash with 500), and the response (it includes the email) is
+    `no-store`. Nothing in this repo called the old path. 7 new checks.
 
 ### Not changed (flagged for Paul)
-- `GET /usage/{api_key}` (auth server) takes the API key in the URL path, so keys can reach
-  access logs. Move it to a header in a later release.
 - The two zero-divisor thresholds (1e-10 vs 1e-15) are unchanged and now documented. The
   decision is open (see `EVALUATION_CONTRACT.md`).
 
