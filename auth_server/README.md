@@ -31,14 +31,9 @@ GET /
 GET /health
 ```
 
-#### User Signup
-```
-POST /signup
-{
-  "email": "user@example.com",
-  "name": "User Name"
-}
-```
+#### Signup
+Every plan is paid: `GET /create-checkout-session?tier=<tier>` starts Stripe Checkout; the
+webhook provisions the user and `/success` shows the API key once.
 
 #### Validate API Key
 ```

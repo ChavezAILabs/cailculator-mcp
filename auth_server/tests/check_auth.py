@@ -228,6 +228,18 @@ with TestClient(main.app) as c:
     # --- /migrate-db gone ---
     check("/migrate-db -> 404", c.post("/migrate-db").status_code == 404)
 
+    # --- Leftover free-signup path gone (it issued paid-tier keys without payment) ---
+    users_before = count(User)
+    check("POST /signup -> 404",
+          c.post("/signup", json={"email": "freeloader@example.com"}).status_code == 404)
+    check("GET /verify-email -> 404", c.get("/verify-email", params={"token": "x"}).status_code == 404)
+    check("GET /signup-free -> 404", c.get("/signup-free").status_code == 404)
+    check("signup attempts created no user", count(User) == users_before
+          and count(User, email="freeloader@example.com") == 0)
+    check("no signup or verify-email route registered",
+          not any(getattr(r, "path", "") in ("/signup", "/verify-email", "/signup-free")
+                  for r in main.app.routes))
+
 for name, ok, detail in results:
     print(f"{'PASS' if ok else 'FAIL'}  {name}" + ("" if ok else f"   {detail}"))
 passed = sum(ok for _, ok, _ in results)

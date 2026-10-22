@@ -305,7 +305,7 @@ cited without their controls) and has since been removed.
   - Keys issued before this change appear in plain text in Railway's log history.
     Revoke them once replacements are issued.
   - An empty or whitespace-only `ADMIN_TOKEN` disables the admin endpoints (503), like an
-    unset one. The checks are in the repo: `auth_server/tests/check_auth.py` (52 checks;
+    unset one. The checks are in the repo: `auth_server/tests/check_auth.py` (57 checks;
     SQLite by default, Postgres via `CHECK_AUTH_DATABASE_URL`).
   - **Dependencies pinned exactly** (`auth_server/requirements.txt`). A Railway rebuild on
     2026-10-15 pulled SQLAlchemy 2.1, which maps `postgresql://` to the psycopg v3 driver,
@@ -333,6 +333,16 @@ cited without their controls) and has since been removed.
     events like Stripe does; 7 new checks cover unsigned, wrong-secret and missing-secret
     events, and that a refused event provisions nobody until it is retried signed. Against
     the old code, 4 of them fail (forged events got 200 and created the user).
+  - **Removed the leftover free-signup path.** The free tier was dropped in October 2025,
+    but `POST /signup` and `GET /verify-email` stayed live: signup created an Individual
+    (paid) tier user with no payment, and the verification link issued a key that
+    `/validate` accepted. Only the missing email provider kept it closed. Removed both
+    endpoints, their helpers (IP country lookup, signup rate limit, the SendGrid emails)
+    and the `signup_free.html` and `verification_result.html` templates. Also removed the
+    unused `send_api_key_email`, which emailed keys in plain text and printed them when
+    sending failed. SendGrid is gone: `sendgrid` and `requests` leave `requirements.txt`
+    and the `SENDGRID_*` variables leave `.env.example`. The database keeps its columns
+    and the `signup_attempts` table. 5 new checks; against the old code 4 fail.
 
 ### Not changed (flagged for Paul)
 - `GET /usage/{api_key}` (auth server) takes the API key in the URL path, so keys can reach

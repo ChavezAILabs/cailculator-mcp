@@ -20,9 +20,3 @@ psycopg2-binary==2.9.13
 pydantic[email]==2.14.1
 email-validator==2.3.0
 python-dotenv==1.2.4
-
-# Email
-sendgrid==6.12.5
-
-# Utilities
-requests==2.34.2
