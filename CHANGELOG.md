@@ -322,6 +322,8 @@ cited without their controls) and has since been removed.
     Railway breach disclosure), `GET /` returns 200. Checked first on Python 3.12.9:
     unpinned `main` reproduces `No module named 'psycopg'`; pinned `main` loads the
     psycopg2 driver. The admin key endpoints are 2.2.0 code, so they are not live yet.
+    Same day, Paul rotated the API keys issued before the reveal-once change (they were in
+    Railway's log history), and a check of the users table found no new users.
   - Deploying: the service's root directory is `auth_server`, so `railway up` must run
     from the repository root, not from inside `auth_server` (the build fails with
     "directory .../auth_server does not exist").
