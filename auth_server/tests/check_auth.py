@@ -7,12 +7,14 @@ Exits 1 if any check fails.
 """
 import contextlib
 import hashlib
+import hmac
 import io
 import json
 import os
 import shutil
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 AUTH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
@@ -24,8 +26,8 @@ os.environ.update({
     "DATABASE_URL": os.environ.get("CHECK_AUTH_DATABASE_URL") or f"sqlite:///{(tmp / 'auth.db').as_posix()}",
     "ADMIN_TOKEN": "test-admin-token",
     "STRIPE_SECRET_KEY": "sk_test_dummy",
+    "STRIPE_WEBHOOK_SECRET": "whsec_test_dummy",
 })
-os.environ.pop("STRIPE_WEBHOOK_SECRET", None)
 sys.path.insert(0, str(AUTH))
 os.chdir(tmp)
 
@@ -63,6 +65,17 @@ def checkout(sid, email, status="complete", payment_status="paid"):
 
 def webhook_event(eid, sid):
     return {"id": eid, "type": "checkout.session.completed", "data": {"object": SESSIONS[sid]}}
+
+
+def post_webhook(c, event, secret="whsec_test_dummy", sign=True):
+    """POST an event the way Stripe does: Stripe-Signature t=<ts>,v1=HMAC-SHA256(secret, "<ts>.<body>")."""
+    body = json.dumps(event)
+    headers = {}
+    if sign:
+        ts = str(int(time.time()))
+        sig = hmac.new(secret.encode(), f"{ts}.{body}".encode(), hashlib.sha256).hexdigest()
+        headers["Stripe-Signature"] = f"t={ts},v1={sig}"
+    return c.post("/webhook/stripe", content=body, headers=headers)
 
 
 def count(model, **f):
@@ -116,7 +129,7 @@ with TestClient(main.app) as c:
     # --- Webhook after success page: same user, no key, nothing logged ---
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
-        r = c.post("/webhook/stripe", content=json.dumps(webhook_event("evt_1", "cs_1")))
+        r = post_webhook(c, webhook_event("evt_1", "cs_1"))
     log = buf.getvalue()
     check("webhook ok", r.status_code == 200, r.text)
     check("webhook: one user for alice", count(User, email="alice@example.com") == 1)
@@ -126,8 +139,29 @@ with TestClient(main.app) as c:
     # --- Webhook BEFORE success page (other order) ---
     checkout("cs_2", "bob@example.com")
     with contextlib.redirect_stdout(io.StringIO()):
-        c.post("/webhook/stripe", content=json.dumps(webhook_event("evt_2", "cs_2")))
+        post_webhook(c, webhook_event("evt_2", "cs_2"))
     check("webhook-first: user created, no key", count(User, email="bob@example.com") == 1)
+
+    # --- Webhook signature: fail closed ---
+    checkout("cs_4", "mallory@example.com")
+    forged = webhook_event("evt_4", "cs_4")
+    with contextlib.redirect_stdout(io.StringIO()):
+        r_unsigned = post_webhook(c, forged, sign=False)
+        r_wrong = post_webhook(c, forged, secret="whsec_wrong")
+    check("webhook: unsigned -> 400", r_unsigned.status_code == 400, r_unsigned.text)
+    check("webhook: wrong secret -> 400", r_wrong.status_code == 400, r_wrong.text)
+    saved_whsec = main.STRIPE_WEBHOOK_SECRET
+    for setting in (None, "", "   "):
+        main.STRIPE_WEBHOOK_SECRET = setting
+        with contextlib.redirect_stdout(io.StringIO()):
+            codes = [post_webhook(c, forged, sign=False).status_code, post_webhook(c, forged).status_code]
+        check(f"webhook: secret={setting!r} -> 503 signed or not", codes == [503, 503], codes)
+    main.STRIPE_WEBHOOK_SECRET = saved_whsec
+    check("webhook: refused events provisioned nobody", count(User, email="mallory@example.com") == 0)
+    with contextlib.redirect_stdout(io.StringIO()):
+        r = post_webhook(c, forged)
+    check("webhook: same event, signed -> provisioned (retry works)",
+          r.status_code == 200 and count(User, email="mallory@example.com") == 1, r.text)
     r = c.get("/success", params={"session_id": "cs_2"})
     key2 = extract_key(r.text)
     check("webhook-first: success shows key", key2 is not None)

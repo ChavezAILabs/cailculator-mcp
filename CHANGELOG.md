@@ -305,7 +305,7 @@ cited without their controls) and has since been removed.
   - Keys issued before this change appear in plain text in Railway's log history.
     Revoke them once replacements are issued.
   - An empty or whitespace-only `ADMIN_TOKEN` disables the admin endpoints (503), like an
-    unset one. The checks are in the repo: `auth_server/tests/check_auth.py` (45 checks;
+    unset one. The checks are in the repo: `auth_server/tests/check_auth.py` (52 checks;
     SQLite by default, Postgres via `CHECK_AUTH_DATABASE_URL`).
   - **Dependencies pinned exactly** (`auth_server/requirements.txt`). A Railway rebuild on
     2026-10-15 pulled SQLAlchemy 2.1, which maps `postgresql://` to the psycopg v3 driver,
@@ -325,6 +325,14 @@ cited without their controls) and has since been removed.
   - Deploying: the service's root directory is `auth_server`, so `railway up` must run
     from the repository root, not from inside `auth_server` (the build fails with
     "directory .../auth_server does not exist").
+  - **The Stripe webhook fails closed.** With `STRIPE_WEBHOOK_SECRET` unset, empty or
+    spaces only, `/webhook/stripe` used to accept unverified events (a warning in the log),
+    so anyone could post a forged `checkout.session.completed` and provision a user. It now
+    refuses every event with 503, so Stripe retries once the secret is set; startup logs a
+    warning. Every event must carry a valid signature (400 otherwise). The checks now sign
+    events like Stripe does; 7 new checks cover unsigned, wrong-secret and missing-secret
+    events, and that a refused event provisions nobody until it is retried signed. Against
+    the old code, 4 of them fail (forged events got 200 and created the user).
 
 ### Not changed (flagged for Paul)
 - `GET /usage/{api_key}` (auth server) takes the API key in the URL path, so keys can reach

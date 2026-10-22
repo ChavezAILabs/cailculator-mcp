@@ -72,6 +72,8 @@ STRIPE_PRICES = {tier: os.getenv(f"STRIPE_PRICE_ID_{tier.upper()}", price)
                  for tier, price in _LIVE_PRICES.items()}
 if (os.getenv("STRIPE_SECRET_KEY") or "").startswith("sk_test_") and STRIPE_PRICES == _LIVE_PRICES:
     print("WARNING: Stripe test key with live-mode price IDs; set STRIPE_PRICE_ID_<TIER> for test mode")
+if not (STRIPE_WEBHOOK_SECRET or "").strip():
+    print("WARNING: STRIPE_WEBHOOK_SECRET not set; /webhook/stripe will refuse every event (503)")
 PRICE_TO_TIER = {price: tier for tier, price in STRIPE_PRICES.items()}
 
 # Admin endpoints (/admin/...) require this token in the X-Admin-Token header.
@@ -1152,20 +1154,18 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     The webhook provisions the user only; the API key is created and shown once on the
     success page (/success), and never logged.
     """
+    # Fail closed: without a signing secret, anyone could post a forged event. 503 (not 400)
+    # so Stripe retries the event once the secret is configured.
+    secret = (STRIPE_WEBHOOK_SECRET or "").strip()
+    if not secret:
+        print("ERROR: STRIPE_WEBHOOK_SECRET not set; webhook refused (503)")
+        raise HTTPException(status_code=503, detail="Webhook not configured")
+
     payload = await request.body()
     sig_header = request.headers.get('stripe-signature')
 
     try:
-        if STRIPE_WEBHOOK_SECRET:
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, STRIPE_WEBHOOK_SECRET
-            )
-        else:
-            import json
-            event = stripe.Event.construct_from(
-                json.loads(payload.decode('utf-8')), stripe.api_key
-            )
-            print("WARNING: STRIPE_WEBHOOK_SECRET not set, webhook signature not verified")
+        event = stripe.Webhook.construct_event(payload, sig_header, secret)
     except ValueError as e:
         print(f"Invalid webhook payload: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid payload")
