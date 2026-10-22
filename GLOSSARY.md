@@ -19,19 +19,16 @@
 ## II. Algorithms & Protocols
 *The tools used to hunt for structure in "algebraic dark matter."*
 
-*   **Chavez Transform**: A formally verified integral transform that maps numerical data into high-dimensional space. It surfaces structural invariants and symmetries hidden in traditional 1D/2D time-series analysis.
-*   **Zero Divisor Transmission Protocol (ZDTP)**: A high-precision protocol for transmitting data through verified mathematical gateways. It measures **Structural Coherence** by analyzing how data survives the transition from 16D to 256D.
-*   **Convergence Score**: A metric (0.0 to 1.0) derived from ZDTP. High convergence (>0.8) indicates a robust, verified pattern, while low convergence (<0.5) signals a structural regime shift.
+*   **Chavez Transform**: An integral transform whose kernel is built from a zero divisor pair, with a Lean-verified stability bound ($|C[f]| \leq M \cdot \|f\|_1$). The 1D version the tools ship has an exact closed form, a fixed center-weighted sum of the series, and does not depend on the zero divisor property; it is reported as an experimental measurement.
+*   **Zero Divisor Transmission Protocol (ZDTP)**: Lifts a 16D input through each Canonical Six gateway to 256D and compares the resulting magnitudes. The outputs have an exact closed form, $\sqrt{\|x\|^2 + 64x_0^2 + 16s_k^2}$ with $s_k$ a signed four-term sum of the input, and do not depend on the zero divisor property; they are reported as experimental measurements (`docs/ZDTP_CLOSED_FORM.md`).
+*   **Convergence Score**: A metric (0.0 to 1.0) derived from ZDTP. 1.0 means all six gateways give identical output magnitudes. It is reported as a measurement; since 2.2.0 no stability or regime verdict is drawn from it, because it did not separate structured data from noise in null testing.
 *   **Alpha ($\alpha$)**: A tuning parameter in the Chavez Transform that controls damping. Lean 4 proofs verify the transform's stability across specific $\alpha$ regimes.
 *   **Stability Constant ($M$)**: A machine-verified theoretical bound. It guarantees that the transform's output remains proportional to its input ($|C[f]| \leq M \cdot \|f\|_1$), preventing "numerical inflation."
 
 ## III. Domain Projections (Profiles)
 *Language-switching layers that map math to the real world.*
 
-*   **Tipping Point (Journalism)**: A domain projection of **Bilateral Zero Divisors**. It signals a sudden mathematical cancellation that precedes a systemic breakdown (e.g., budget collapse or policy shift).
-*   **Sourcing Confidence (Journalism)**: A projection of **Transform Convergence**, measuring how robust a mathematical signal is against noise or "dirty" public records.
-*   **Volatility Regime Shift (Quant)**: A projection of **Bilateral Zero Divisors** used to identify fundamental changes in market mood or bifurcation risks.
-*   **Mean Reversion Strength (Quant)**: A projection of **Conjugation Symmetry**, indicating how strongly price data aligns with historical averages.
+*   **Journalism and Quant Equity**: Since 2.2.0 neither profile renames algebraic quantities into domain language. Earlier projections ("Tipping Point", "Sourcing Confidence", "Volatility Regime Shift", "Mean Reversion Strength") were removed because no test supports them; both profiles report the measured quantities under their algebraic names.
 *   **Spectral Coherence (RHI)**: A measure of how well the distribution of nontrivial Riemann zeros aligns with the critical line (Re(s) = ½) when mapped through the 16D algebraic gateway structure.
 
 ## IV. Formal Verification & Rigor

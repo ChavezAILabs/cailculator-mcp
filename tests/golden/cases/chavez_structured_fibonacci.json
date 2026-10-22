@@ -1,0 +1,51 @@
+{
+  "id": "chavez_structured_fibonacci",
+  "tool": "chavez_transform",
+  "args": {
+    "data": [
+      1.0,
+      2.0,
+      3.0,
+      5.0,
+      8.0,
+      13.0,
+      21.0,
+      34.0,
+      55.0,
+      89.0,
+      144.0,
+      233.0,
+      377.0,
+      610.0,
+      987.0,
+      1597.0
+    ],
+    "alpha": 1.0,
+    "dimension_param": 2
+  },
+  "verification": "recorded",
+  "source": "live output 2026-09-24",
+  "notes": "Structured input for the AIEX-996 null-control comparison.",
+  "record_keys": [
+    "success",
+    "transform_value",
+    "stability_bound.M",
+    "stability_bound.satisfied",
+    "stability_bound.ratio"
+  ],
+  "expected": {
+    "success": true,
+    "transform_value": 585.2195275166894,
+    "stability_bound": {
+      "M": 2.9430355293715387,
+      "satisfied": true,
+      "ratio": 0.035169807653032556
+    }
+  },
+  "expected_input_hash": "sha256:8b1ed965579da2cae7ac45de4bdb104f502091227ee9cb57ba1487fae5bb2c2b",
+  "tolerance": {
+    "transform_value": 5.852195275166894e-07,
+    "stability_bound.M": 2.9430355293715387e-09,
+    "stability_bound.ratio": 3.516980765303256e-11
+  }
+}

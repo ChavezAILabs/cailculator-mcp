@@ -49,16 +49,22 @@ async def regime_detection(arguments: Dict[str, Any]) -> Dict[str, Any]:
         detector = PatternDetector(alpha=1.0)
         patterns = detector.detect_all_patterns(prices)
         
-        # 4. Statistical Baseline (Legacy HMM - Placeholder for v2.0)
-        hmm_regime = "sideways" # Mock for staging
-        
+        # 4. No regime verdict. statistical_method was a hard-coded "sideways" (HMM never
+        # implemented) and structural_method reported the top pattern, or "stable" when
+        # there was none: neither was a regime test. Withheld until a validated detector
+        # exists.
+
         # 5. Build Output
         output = {
             "success": True,
             "regime_classification": {
-                "statistical_method": hmm_regime,
-                "structural_method": patterns[0].pattern_type if patterns else "stable",
-                "overall_confidence": patterns[0].confidence if patterns else 0.5
+                "statistical_method": "not_assessed",
+                "structural_method": "not_assessed",
+                "overall_confidence": None,
+                "note": (
+                    "No regime verdict: no regime detector has passed a validation gate. "
+                    "Detected patterns are reported under mathematical_structure."
+                ),
             },
             "mathematical_structure": {
                 "patterns_detected": len(patterns),

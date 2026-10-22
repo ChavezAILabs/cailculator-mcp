@@ -1,0 +1,3 @@
+# Extra packages for tests/check_auth.py (not needed by the server).
+# Install with: pip install -r auth_server/requirements.txt -r auth_server/tests/requirements.txt
+httpx==0.28.1

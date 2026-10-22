@@ -4,5 +4,8 @@
   "scope": "Template for custom profile development",
   "used_theorems": [],
   "empirical_dependencies": [],
-  "tier": "Template"
+  "tier": "Template",
+  "documented_uses": [
+    "zdtp_transmit"
+  ]
 }

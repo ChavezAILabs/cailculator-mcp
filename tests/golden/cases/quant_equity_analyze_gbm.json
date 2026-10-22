@@ -1,0 +1,92 @@
+{
+  "id": "quant_equity_analyze_gbm",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": {
+      "$data": "quant_prices_gbm.json"
+    },
+    "profile": "quant_equity"
+  },
+  "verification": "recorded",
+  "source": "live output 2026-09-24",
+  "notes": "quant_equity profile, 60 synthetic GBM closes. Until golden suite 2.1 the profile was omitted to exercise the default; plan defaults are now covered by test_access.py.",
+  "profile": "quant_equity",
+  "record_keys": [
+    "success",
+    "profile",
+    "data_points",
+    "regime.classification",
+    "regime.stability_level",
+    "regime.convergence_score",
+    "structural_analysis.chavez_transform_value",
+    "structural_analysis.patterns_detected",
+    "zdtp_convergence.score",
+    "gateway_breakdown.S1.label",
+    "gateway_breakdown.S1.magnitude_256d",
+    "gateway_breakdown.S2.label",
+    "gateway_breakdown.S2.magnitude_256d",
+    "gateway_breakdown.S3A.label",
+    "gateway_breakdown.S3A.magnitude_256d",
+    "gateway_breakdown.S3B.label",
+    "gateway_breakdown.S3B.magnitude_256d",
+    "gateway_breakdown.S4.label",
+    "gateway_breakdown.S4.magnitude_256d",
+    "gateway_breakdown.S5.label",
+    "gateway_breakdown.S5.magnitude_256d"
+  ],
+  "expected": {
+    "success": true,
+    "profile": "quant_equity",
+    "data_points": 60,
+    "regime": {
+      "classification": "not_assessed",
+      "stability_level": "not_assessed",
+      "convergence_score": 0.5902
+    },
+    "structural_analysis": {
+      "chavez_transform_value": 3545.39038,
+      "patterns_detected": 0
+    },
+    "zdtp_convergence": {
+      "score": 0.5902
+    },
+    "gateway_breakdown": {
+      "S1": {
+        "label": "S1",
+        "magnitude_256d": 16.146405
+      },
+      "S2": {
+        "label": "S2",
+        "magnitude_256d": 16.250545
+      },
+      "S3A": {
+        "label": "S3A",
+        "magnitude_256d": 16.262822
+      },
+      "S3B": {
+        "label": "S3B",
+        "magnitude_256d": 3.829176
+      },
+      "S4": {
+        "label": "S4",
+        "magnitude_256d": 8.964493
+      },
+      "S5": {
+        "label": "S5",
+        "magnitude_256d": 8.899685
+      }
+    }
+  },
+  "expected_input_hash": "sha256:c29d85f0112428c58f269f86c72f4ab415df97ab1e8c91480a2695893237f917",
+  "tolerance": {
+    "regime.convergence_score": 5.902e-10,
+    "structural_analysis.chavez_transform_value": 3.5453903800000002e-06,
+    "zdtp_convergence.score": 5.902e-10,
+    "gateway_breakdown.S1.magnitude_256d": 1.6146405e-08,
+    "gateway_breakdown.S2.magnitude_256d": 1.6250544999999998e-08,
+    "gateway_breakdown.S3A.magnitude_256d": 1.6262822e-08,
+    "gateway_breakdown.S3B.magnitude_256d": 3.829176e-09,
+    "gateway_breakdown.S4.magnitude_256d": 8.964493e-09,
+    "gateway_breakdown.S5.magnitude_256d": 8.899685e-09
+  }
+}

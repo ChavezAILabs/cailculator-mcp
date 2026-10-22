@@ -1,0 +1,18 @@
+{
+  "id": "detect_patterns_null_offset_noise",
+  "tool": "detect_patterns",
+  "args": {
+    "data": {
+      "$data": "null_noise_seed1234.json"
+    }
+  },
+  "verification": "recorded",
+  "source": "null control",
+  "notes": "Seeded N(250, 25) noise. No pattern should be reported.",
+  "expected": {
+    "success": true,
+    "patterns_detected": []
+  },
+  "null_control": true,
+  "expected_input_hash": "sha256:67bfcc5c8fb8bf5c759d7099ddd4c65e18e814378c29f7c92c79cb78d8cc4f22"
+}

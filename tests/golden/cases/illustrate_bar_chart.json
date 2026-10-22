@@ -1,0 +1,34 @@
+{
+  "id": "illustrate_bar_chart",
+  "tool": "illustrate",
+  "args": {
+    "plot_spec": {
+      "axes": [
+        {
+          "type": "bar",
+          "x": [
+            "a",
+            "b",
+            "c"
+          ],
+          "y": [
+            1,
+            3,
+            2
+          ]
+        }
+      ],
+      "title": "golden"
+    },
+    "description": "golden suite asset-path check"
+  },
+  "verification": "recorded",
+  "source": "AIEX-499 (illustrate asset-path bug reproduced only from a hostile cwd)",
+  "notes": "Asserts the PNG is actually written to static_path; the file is deleted after the check.",
+  "expected": {
+    "success": true,
+    "media_type": "image/png"
+  },
+  "expect_static_file": true,
+  "expected_input_hash": "sha256:542ee0016bb27f52c5a2766978f74e40bfa82428169e4ad04379c9190e5c4d54"
+}
