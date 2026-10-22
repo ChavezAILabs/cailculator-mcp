@@ -1,23 +1,28 @@
 # CAILculator Auth Server Dependencies
+# Direct dependencies pinned exactly (2026-10-15), so a Railway rebuild can't pull a surprise
+# upgrade. SQLAlchemy 2.1 maps postgresql:// to psycopg v3, which crashed the production
+# rebuild with "No module named 'psycopg'"; 2.0.x maps it to psycopg2, installed below.
+# Upgrade deliberately: change a pin, rerun tests/check_auth.py, then deploy.
 
 # Web framework
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-jinja2>=3.1.0
-stripe>=7.0.0
-python-multipart>=0.0.6
-aiofiles>=24.1.0
+fastapi==0.143.1
+uvicorn[standard]==0.54.0
+jinja2==3.1.6
+stripe==16.0.0
+python-multipart==0.0.32
+aiofiles==25.1.0
 
-# Database
-sqlalchemy>=2.0.36
-psycopg2-binary>=2.9.10
+# Database (keep these two together: SQLAlchemy 2.0.x + psycopg2)
+sqlalchemy==2.0.54
+psycopg2-binary==2.9.13
 
-# Validation (Python 3.13 compatible)
-pydantic[email]>=2.10.0
-python-dotenv>=1.0.0
+# Validation
+pydantic[email]==2.14.1
+email-validator==2.3.0
+python-dotenv==1.2.4
 
 # Email
-sendgrid>=6.11.0
+sendgrid==6.12.5
 
 # Utilities
-requests>=2.32.0
+requests==2.34.2
