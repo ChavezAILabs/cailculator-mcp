@@ -314,6 +314,17 @@ cited without their controls) and has since been removed.
     pinned. Checked with a clean install: 45/45 on SQLite and on a local Postgres 17.11, and
     startup on an existing database creates the missing `checkout_key_reveals` table and
     keeps existing rows. Stripe 16.0.0 is pinned but only exercised with Stripe faked.
+  - **Hotfixed in production on 2026-10-22, ahead of 2.2.0.** The 10-15 crash persisted
+    because every rebuild still ran `main` (36f2671) with unpinned requirements. Hotfix
+    commit d8d3d7d on `main` changes `auth_server/requirements.txt` only (same pins as
+    above; no 2.2.0 code). Deployed with `railway up` (deployment 6a9d3558): SUCCESS,
+    startup migrations ran on Postgres (confirms the rotated database password after the
+    Railway breach disclosure), `GET /` returns 200. Checked first on Python 3.12.9:
+    unpinned `main` reproduces `No module named 'psycopg'`; pinned `main` loads the
+    psycopg2 driver. The admin key endpoints are 2.2.0 code, so they are not live yet.
+  - Deploying: the service's root directory is `auth_server`, so `railway up` must run
+    from the repository root, not from inside `auth_server` (the build fails with
+    "directory .../auth_server does not exist").
 
 ### Not changed (flagged for Paul)
 - `GET /usage/{api_key}` (auth server) takes the API key in the URL path, so keys can reach
