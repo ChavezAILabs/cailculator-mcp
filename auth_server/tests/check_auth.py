@@ -46,6 +46,13 @@ class FakeSession:
             raise Exception("No such checkout session")
         return SESSIONS[sid]
 
+    created = []
+
+    @staticmethod
+    def create(**kwargs):
+        FakeSession.created.append(kwargs)
+        return type("S", (), {"url": "https://checkout.stripe.com/c/pay/cs_test_fake"})()
+
 
 class FakeSubscription:
     @staticmethod
@@ -227,6 +234,14 @@ with TestClient(main.app) as c:
 
     # --- /migrate-db gone ---
     check("/migrate-db -> 404", c.post("/migrate-db").status_code == 404)
+
+    # --- Checkout session: no payment_method_types (Stripe API 2026-09-30 rejects it) ---
+    r = c.get("/create-checkout-session", params={"tier": "individual"}, follow_redirects=False)
+    sent = FakeSession.created[-1] if FakeSession.created else {}
+    check("checkout redirects to Stripe", r.status_code == 303 and "checkout.stripe.com" in r.headers.get("location", ""),
+          r.status_code)
+    check("checkout omits payment_method_types", sent and "payment_method_types" not in sent, sorted(sent))
+    check("checkout uses the plan's price", sent.get("line_items", [{}])[0].get("price") == INDIVIDUAL_PRICE)
 
     # --- /usage takes the key from the X-API-Key header, never the URL ---
     r = c.get("/usage", headers={"X-API-Key": key4})

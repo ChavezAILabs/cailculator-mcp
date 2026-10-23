@@ -305,7 +305,7 @@ cited without their controls) and has since been removed.
   - Keys issued before this change appear in plain text in Railway's log history.
     Revoke them once replacements are issued.
   - An empty or whitespace-only `ADMIN_TOKEN` disables the admin endpoints (503), like an
-    unset one. The checks are in the repo: `auth_server/tests/check_auth.py` (64 checks;
+    unset one. The checks are in the repo: `auth_server/tests/check_auth.py` (67 checks;
     SQLite by default, Postgres via `CHECK_AUTH_DATABASE_URL`).
   - **Dependencies pinned exactly** (`auth_server/requirements.txt`). A Railway rebuild on
     2026-10-15 pulled SQLAlchemy 2.1, which maps `postgresql://` to the psycopg v3 driver,
@@ -350,6 +350,19 @@ cited without their controls) and has since been removed.
     returns 404. A missing, blank or unknown key gets 401 (a key whose user no longer
     exists used to crash with 500), and the response (it includes the email) is
     `no-store`. Nothing in this repo called the old path. 7 new checks.
+  - **Purchase tested end to end against real Stripe test mode (2026-10-22).** Local
+    server, SQLite, a $50/month test-mode price, `stripe listen` forwarding signed
+    webhooks, card 4242. Checkout paid and redirected to `/success`;
+    `checkout.session.completed` and `customer.subscription.created` both returned 200
+    with signature verification on; the user was provisioned as `individual`, `active`,
+    with the subscription ID; `/success` showed the key once and a reload said "already
+    shown"; the key validated (`individual`, limit 25,000), `/usage` worked with the
+    header, and the plan maps to `general_data` + `developer_v1` on both sides.
+  - **Fixed: checkout failed with Stripe 16.** `create-checkout-session` passed
+    `payment_method_types=['card']`, which Stripe API 2026-09-30 (the version Stripe
+    16.0.0 sends) rejects, so every checkout returned 500. Removed it; payment methods
+    come from the Stripe Dashboard. Found by the test-mode purchase; `main` has the same
+    call with the same pinned SDK. 3 new checks; against the old code 1 fails.
 
 ### Not changed (flagged for Paul)
 - The two zero-divisor thresholds (1e-10 vs 1e-15) are unchanged and now documented. The
