@@ -105,11 +105,11 @@ The full transmission through a single gateway produces a 256D state vector. The
 
 Before any transmission begins, the bilateral oracle independently reconfirms the zero divisor property of the gateway pair numerically:
 
-$$|P \times Q| < 10^{-10} \quad \text{and} \quad |Q \times P| < 10^{-10}$$
+$$|P \times Q| < 10^{-15} \quad \text{and} \quad |Q \times P| < 10^{-15}$$
 
-This check runs at $10^{-15}$ floating-point precision. It is not a Lean call — it is a numpy arithmetic gate that runs on every transmission. The Lean proof (`BilateralCollapse.lean`) established which pairs are valid gateways; the runtime oracle enforces this on every execution.
+The check runs in float64 arithmetic. It is not a Lean call — it is a numpy arithmetic gate that runs on every transmission. The Lean proof (`BilateralCollapse.lean`) established which pairs are valid gateways; the runtime oracle enforces this on every execution.
 
-*Note on thresholds*: The $10^{-15}$ figure is the engine's general floating-point precision standard. The $10^{-10}$ figure is the zero divisor classification gate — the threshold below which a product is classified as algebraically zero. These measure different things and are not contradictory.
+*Note on thresholds*: $10^{-15}$ is the zero divisor classification gate, the norm below which a product counts as zero. Every zero-divisor check in CAILculator uses it (see `docs/EVALUATION_CONTRACT.md`). Earlier versions of this page said $10^{-10}$; the gateway check has always used $10^{-15}$.
 
 ---
 

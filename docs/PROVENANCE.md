@@ -13,13 +13,13 @@ response fields and never replaces them.
   "build_commit": "abc1234",
   "build_commit_source": "build",
   "tool": "compute_high_dimensional",
-  "algorithm": "cayley_dickson.is_zero_divisor/1",
+  "algorithm": "cayley_dickson.is_zero_divisor/2",
   "framework": "cayley-dickson",
   "signature": null,
   "dimension": 64,
   "profile": null,
   "plan": "individual",
-  "tolerance": { "zero_threshold": 1e-10 },
+  "tolerance": { "zero_threshold": 1e-15 },
   "input_hash": "sha256:…",
   "input_basis": "normalized",
   "hash_scheme": "canonical-json-v1",
@@ -43,7 +43,7 @@ response fields and never replaces them.
 | `dimension` | Algebra dimension used, or `null` for multi-dimension pipelines (`analyze_dataset`). |
 | `profile` | `null`, or `{name, version, tier, gate_status}`. An `Experimental` profile also carries `gates_failed` and a plain `notice` explaining why. |
 | `plan` | The caller's subscription plan, which decides the profiles it may use (`plans.py`). `"developer"` for dev keys in a source checkout; `null` for in-process calls made without a plan. |
-| `tolerance` | The thresholds **actually applied** to produce this answer (for example `zero_threshold`). This is what tells the two zero-divisor tools apart: see `EVALUATION_CONTRACT.md`. |
+| `tolerance` | The thresholds **actually applied** to produce this answer (for example `zero_threshold`). Both zero-divisor tools now apply 1e-15: see `EVALUATION_CONTRACT.md`. |
 | `input_hash` | SHA-256 of the normalized inputs (scheme below). |
 | `input_basis` | `normalized` = the inputs the tool actually used, after parsing and validation, with defaults filled in and dimension inferred. `raw_request` = the call failed validation, so the raw arguments were hashed instead. |
 | `golden_suite` | Version of the golden test suite this build passed (`tests/golden/VERSION`); `null` for unstamped source checkouts. |

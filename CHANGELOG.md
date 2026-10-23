@@ -6,7 +6,8 @@ All notable changes to the CAILculator MCP Server will be documented in this fil
 
 Golden test suite, response provenance, and real profile gates. Bundled with the
 August input-validation and `chavez_transform` doc fixes below. No change to the math:
-every algebra, transform and detector computes exactly what it did in 2.1.4.
+every algebra, transform and detector computes exactly what it did in 2.1.4. One verdict
+rule changed: `compute_high_dimensional`'s zero-divisor threshold is now 1e-15 (below).
 
 ### Added
 - **Provenance block on every tool response** (`provenance.py`, applied once at dispatch in
@@ -366,9 +367,17 @@ cited without their controls) and has since been removed.
     2026-10-22, deployment 182ad121: SUCCESS, `/health` 200). 3 new checks; against the
     old code 1 fails.
 
-### Not changed (flagged for Paul)
-- The two zero-divisor thresholds (1e-10 vs 1e-15) are unchanged and now documented. The
-  decision is open (see `EVALUATION_CONTRACT.md`).
+### Changed — one zero-divisor threshold (1e-15)
+- `compute_high_dimensional` `is_zero_divisor` now declares zero below **1e-15**, the
+  same threshold as `verify_bilateral_oracle` and the ZDTP gateway check (Paul's decision,
+  2026-10-22: "precision to 15 zeros"). It was 1e-10, so a pair with product norms between
+  1e-15 and 1e-10 used to be reported as a zero divisor and now is not. Provenance
+  `algorithm` is `cayley_dickson.is_zero_divisor/2`. Golden cases are unaffected: their
+  norms are exactly 0 or at least 1. Caveat in `EVALUATION_CONTRACT.md`: dense irrational
+  pairs at high dimension can leave rounding residue above 1e-15.
+- `docs/zdtp_protocol.md` said the gateway check used 1e-10; the code has always used
+  1e-15. Corrected, along with the README, `PROVENANCE.md` and the tool description.
+- MCP 2.0 protocol update: deferred to the release after 2.2.0 (Paul, 2026-10-22).
 
 ## [Unreleased — August audit, folded into 2.2.0]
 

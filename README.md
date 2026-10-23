@@ -212,7 +212,7 @@ CAILculator computes natively across two fundamentally different algebraic frame
 ## Technical Specifications
 
 - **Arithmetic**: 64-bit floating point (numpy). Rounding error grows with dimension; products agree with exact values to about $10^{-15}$ at 16D and about $10^{-14}$ at 64D.
-- **Zero divisor thresholds**: `verify_bilateral_oracle` and the transmission gate require $\|PQ\|$ and $\|QP\|$ below $10^{-15}$; `compute_high_dimensional`'s `is_zero_divisor` uses $10^{-10}$. Both are classification thresholds, not precision guarantees (see `docs/EVALUATION_CONTRACT.md`).
+- **Zero divisor thresholds**: `verify_bilateral_oracle`, `compute_high_dimensional`'s `is_zero_divisor` and the transmission gate all require $\|PQ\|$ and $\|QP\|$ below $10^{-15}$. This is a classification threshold, not precision guarantees (see `docs/EVALUATION_CONTRACT.md`).
 - **Research Citation**: Grounded in systematic computational enumeration published at Zenodo: [10.5281/zenodo.17402495](https://doi.org/10.5281/zenodo.17402495).
 - **Core Libraries**: `numpy` and `scipy`.
 

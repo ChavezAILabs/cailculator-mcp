@@ -174,8 +174,8 @@ TOOLS_DEFINITIONS = [
             "Cayley-Dickson algebra operations on hypercomplex elements from 16D (sedenions) to 256D. "
             "multiply/add/conjugate return the full coefficient vector (all N components). "
             "norm returns the scalar magnitude. is_zero_divisor checks bilateral annihilation (PQ=0 AND QP=0), "
-            "declaring zero when both norms are below 1e-10. verify_bilateral_oracle asks the same question "
-            "with a stricter 1e-15 threshold; see docs/EVALUATION_CONTRACT.md. Every response carries a "
+            "declaring zero when both norms are below 1e-15, the same threshold as verify_bilateral_oracle; "
+            "see docs/EVALUATION_CONTRACT.md. Every response carries a "
             "provenance block stating the threshold applied."
         ),
         "inputSchema": {
@@ -323,7 +323,9 @@ _PATTERN_THRESHOLDS = {
     "e8_first_shell_tol": 1e-10,
 }
 _ORACLE_ZERO_THRESHOLD = 1e-15
-_CD_ZERO_THRESHOLD = 1e-10
+# One zero threshold for both zero-divisor tools (Paul, 2026-10-22: "precision to 15 zeros").
+# compute_high_dimensional used 1e-10 through 2.2.0 development.
+_CD_ZERO_THRESHOLD = _ORACLE_ZERO_THRESHOLD
 
 # The convergence score once mapped to stable (>= 0.8) / transitioning (>= 0.5) / shifting.
 # On the 2.2.0 G3 null series it fell in 0.54-0.65, and so did every structured series
@@ -736,7 +738,10 @@ async def compute_high_dimensional(arguments: Dict[str, Any]) -> Dict[str, Any]:
         VALID_OPS = {"multiply", "add", "conjugate", "norm", "is_zero_divisor"}
 
         operation = arguments.get("operation")
-        report(algorithm=f"cayley_dickson.{operation}/1", framework="cayley-dickson")
+        # Version suffixes per PROVENANCE.md; is_zero_divisor/2 = 1e-15 threshold (was 1e-10)
+        _ALGO = {"is_zero_divisor": "cayley_dickson.is_zero_divisor/2"}
+        algo = _ALGO.get(operation, f"cayley_dickson.{operation}/1")
+        report(algorithm=algo, framework="cayley-dickson")
         if operation not in VALID_OPS:
             return {"success": False, "error": f"operation must be one of {sorted(VALID_OPS)}"}
 
@@ -768,7 +773,7 @@ async def compute_high_dimensional(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
         uses_b = operation in ("multiply", "add", "is_zero_divisor")
         report(
-            algorithm=f"cayley_dickson.{operation}/1", framework="cayley-dickson", dimension=dimension,
+            algorithm=algo, framework="cayley-dickson", dimension=dimension,
             tolerance={"zero_threshold": _CD_ZERO_THRESHOLD} if operation == "is_zero_divisor" else None,
             inputs={"operation": operation, "dimension": dimension,
                     "a": [float(v) for v in pad(a_coeffs)],

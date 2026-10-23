@@ -17,24 +17,22 @@ reported as `is_bilateral_zero_divisor: false`. The individual norms `PQ_norm` a
 
 | Tool | Threshold on ‖PQ‖ and ‖QP‖ | Frameworks | Dimensions |
 |---|---|---|---|
-| `compute_high_dimensional` (`is_zero_divisor`) | **1e-10** | Cayley-Dickson | 16, 32, 64, 128, 256 |
+| `compute_high_dimensional` (`is_zero_divisor`) | **1e-15** | Cayley-Dickson | 16, 32, 64, 128, 256 |
 | `verify_bilateral_oracle` | **1e-15** | Cayley-Dickson or Clifford | any length (Clifford: power of 2) |
 | `zdtp_transmit` (gateway check before transmission) | 1e-15 | Cayley-Dickson, 16D | 16 |
 
-**Why there are two.** The repo does not record a reason for `compute_high_dimensional`
-using 1e-10. The oracle's 1e-15 matches the engine's float64 "10^-15" standard.
+**One threshold.** Decided by Paul on 2026-10-22: zero means below 1e-15 ("precision to
+15 zeros"), matching the engine's float64 "10^-15" standard. Until then
+`compute_high_dimensional` used 1e-10 (no recorded reason), so the two tools could
+disagree when a product's norm fell between 1e-15 and 1e-10. They now agree. The
+provenance `algorithm` for `is_zero_divisor` is `cayley_dickson.is_zero_divisor/2`.
 
-**When they can disagree.** Only when a product's norm falls between 1e-15 and 1e-10.
-Then `compute_high_dimensional` says "zero divisor" and the oracle says "not". Pairs made
-of ±1 basis coefficients (the Canonical Six and every golden case) have norms of exactly
-0 or at least 1, so the two tools agree on them. The golden suite checks that agreement.
-Dense or irrational coefficients can leave rounding residue near 1e-16 × dimension, and
-that is where 1e-15 becomes fragile.
-
-**Decision pending (Paul):** keep two thresholds and document them here, or have both
-tools share one. A shared threshold would most naturally be relative, e.g.
-‖PQ‖ ≤ ε·‖P‖·‖Q‖. The math has **not** been changed in v2.2.0; both tools behave
-exactly as before.
+**What to watch.** Pairs made of ±1 basis coefficients (the Canonical Six and every
+golden case) have product norms of exactly 0 or at least 1, so the threshold does not
+affect them. Dense or irrational coefficients can leave float64 rounding residue near
+1e-16 × dimension (about 2.6e-14 at 256D), which is above 1e-15: such a pair can be a
+true zero divisor and still be reported as not one. A relative threshold
+(‖PQ‖ ≤ ε·‖P‖·‖Q‖) would handle that; it is not implemented.
 
 ## "precision" is not "threshold"
 
@@ -43,7 +41,7 @@ exactly as before.
   compatibility. It does **not** say what cutoff decided a verdict.
 - `threshold` (and `provenance.tolerance`) is the cutoff that decided the verdict.
   `compute_high_dimensional` returning `"precision": "10^-15"` next to
-  `"threshold": 1e-10` means "computed in float64; declared zero below 1e-10".
+  `"threshold": 1e-15` means "computed in float64; declared zero below 1e-15".
 
 ## Other verdicts
 
