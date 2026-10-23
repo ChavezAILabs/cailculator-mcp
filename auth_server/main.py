@@ -941,8 +941,9 @@ async def create_checkout_session(tier: str):
         if not base_url.startswith("http"):
             base_url = f"https://{base_url}"
 
+        # No payment_method_types: newer Stripe API versions reject it; payment methods are
+        # managed in the Stripe Dashboard (Settings > Payment methods).
         checkout_session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
             line_items=[{
                 'price': STRIPE_PRICES[tier],
                 'quantity': 1,
