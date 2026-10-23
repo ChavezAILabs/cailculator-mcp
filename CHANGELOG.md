@@ -361,8 +361,10 @@ cited without their controls) and has since been removed.
   - **Fixed: checkout failed with Stripe 16.** `create-checkout-session` passed
     `payment_method_types=['card']`, which Stripe API 2026-09-30 (the version Stripe
     16.0.0 sends) rejects, so every checkout returned 500. Removed it; payment methods
-    come from the Stripe Dashboard. Found by the test-mode purchase; `main` has the same
-    call with the same pinned SDK. 3 new checks; against the old code 1 fails.
+    come from the Stripe Dashboard. Found by the test-mode purchase; `main` had the same
+    call with the same pinned SDK, so it was hotfixed there too (df39978, deployed
+    2026-10-22, deployment 182ad121: SUCCESS, `/health` 200). 3 new checks; against the
+    old code 1 fails.
 
 ### Not changed (flagged for Paul)
 - The two zero-divisor thresholds (1e-10 vs 1e-15) are unchanged and now documented. The
