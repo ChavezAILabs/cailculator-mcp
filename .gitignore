@@ -112,3 +112,6 @@ src/cailculator_mcp/_build_info.py
 !tests/golden/**/*.json
 !src/cailculator_mcp/profiles/*/manifest.json
 !src/cailculator_mcp/profiles/*/GATES.json
+
+# Generated charts (already-tracked ones stay tracked)
+assets/visualizations/
