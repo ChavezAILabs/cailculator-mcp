@@ -4,13 +4,11 @@
 
 ---
 
-## Historical Context: The Transform Lineage
+## Background
 
-The history of mathematical physics is punctuated by moments when a new transform kernel unlocked a previously inaccessible layer of structure. Joseph Fourier's insight was to extend transform analysis through complex exponential basis functions — introducing $e^{ix}$ as a kernel that decomposes functions into their frequency components. The Laplace transform extended this into the complex plane, enabling analysis of transient and unstable systems. The wavelet transform abandoned global basis functions in favor of localized oscillations, making it sensitive to discontinuities and multi-scale structure.
+Classical integral transforms are characterized by their kernels: complex exponentials for the Fourier transform, damped exponentials for the Laplace transform, localized oscillations for wavelet transforms. The Chavez Transform uses a kernel built from **zero divisor elements**, sedenion pairs whose product is zero although neither factor is.
 
-Each transition introduced a richer algebraic object as the kernel: real exponentials, complex exponentials, localized wavelets. The Chavez Transform takes the next structural step. Its kernel is built from **zero divisor elements** — algebraic objects that, when multiplied together, annihilate to zero despite neither factor being zero. This property has no analogue in the classical transform lineage.
-
-To our knowledge, the Chavez Transform is the first integral transform to use zero divisor elements within its kernel.
+To our knowledge, no earlier integral transform uses zero divisors in its kernel. Novelty of construction is the only claim made here. No property comparable to those of the classical transforms (invertibility, a convolution theorem, a frequency-like interpretation) has been shown, and the shipped 1D version reduces to a fixed weighted sum (see "What the shipped tools compute" below).
 
 ---
 

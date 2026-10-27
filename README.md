@@ -16,16 +16,16 @@ CAILculator puts that hypothesis to work — a Model Context Protocol (MCP) serv
 
 Parts of CAILculator's mathematical foundation are proved in Lean 4. The proofs cover the statements listed below, not the tools' numerical outputs, which are computed in floating point. Two files check finite computations with `native_decide`, which trusts compiled code instead of the Lean kernel; [lean/README.md](./lean/README.md) explains what that means and lists each file's axiom footprint.
 
-- **[BilateralCollapse.lean](./lean/BilateralCollapse.lean)**: Proves the bilateral zero divisor identity ($PQ=0 \land QP=0$) for gateway S1, and the collapse formula, without `native_decide`. The identities for all six gateways are proved in `RHForcingArgument.lean`, by `native_decide`. At runtime, transmissions are gated by a numerical check, not by a Lean call.
-- **[ChavezTransform_genuine.lean](./lean/ChavezTransform_genuine.lean)**: Establishes the stability constant $M$, guaranteeing transform outputs never exceed theoretical bounds ($|C[f]| \leq M \cdot \|f\|_1$).
+- **[BilateralCollapse.lean](./lean/BilateralCollapse.lean)**: Proves the bilateral zero divisor identity (PQ = 0 ∧ QP = 0) for gateway S1, and the collapse formula, without `native_decide`. The identities for all six gateways are proved in `RHForcingArgument.lean`, by `native_decide`. At runtime, transmissions are gated by a numerical check, not by a Lean call.
+- **[ChavezTransform_genuine.lean](./lean/ChavezTransform_genuine.lean)**: Establishes the stability constant M, guaranteeing transform outputs never exceed theoretical bounds (|C[f]| ≤ M·‖f‖₁).
 - **[e8_weyl_orbit_unification.lean](./lean/e8_weyl_orbit_unification.lean)**: An exploratory result connecting the Canonical Six to E8 lattice structure. The Lean 4 file proves that the five distinct gateway P-vectors have norm² = 2 (consistent with the E8 first shell) and that an antipodal pair is related by a Weyl reflection, both by `native_decide`, and gives evidence (not a proof) that the vectors lie in a single Weyl orbit. This is the most preliminary of CAILculator's formal components and an active area of work; the associated tooling (`map_e8_orbit`) is correspondingly experimental.
 ---
 
 ## The Chavez Transform
 
-Just as Joseph Fourier revolutionized mathematical physics by extending transform analysis through complex exponential basis functions — introducing $e^{ix}$ as a transform kernel — the **Chavez Transform** takes the next structural leap. To our knowledge, it is the first integral transform to use zero divisor elements within its kernel.
+The **Chavez Transform** is an integral transform whose kernel is built from sedenion zero divisor pairs: elements whose product is zero although neither factor is. To our knowledge, no earlier integral transform uses zero divisors in its kernel. That novelty of construction is the claim; no property comparable to those of the classical transforms has been shown.
 
-**What the shipped tools compute (2.2.0).** The 1D transform behind the `chavez_transform` tool and `analyze_dataset` has an exact closed form. The series is embedded on a single basis element, so the kernel is the same for every gateway pair of the shipped shape, zero divisor or not, and the output is a fixed, center-weighted sum of the series: $T = \sum_i \text{data}_i \cdot w_i$, with weights that depend only on the series length, $\alpha$ and $d$. The formally verified property is the stability bound $|C[f]| \leq M \cdot \|f\|_1$. No noise-filtering or structure-detecting property has been verified or validated, and the 1D value carries no zero-divisor information. Both values are reported as experimental measurements. The n-dimensional transform, where zero divisors can annihilate part of the kernel, is not exposed by any tool and has not been tested. Details: [docs/chavez_transform.md](./docs/chavez_transform.md).
+**What the shipped tools compute (2.2.0).** The 1D transform behind the `chavez_transform` tool and `analyze_dataset` has an exact closed form. The series is embedded on a single basis element, so the kernel is the same for every gateway pair of the shipped shape, zero divisor or not, and the output is a fixed, center-weighted sum of the series: T = Σᵢ dataᵢ·wᵢ, with weights that depend only on the series length, α and d. The formally verified property is the stability bound |C[f]| ≤ M·‖f‖₁. No noise-filtering or structure-detecting property has been verified or validated, and the 1D value carries no zero-divisor information. Both values are reported as experimental measurements. The n-dimensional transform, where zero divisors can annihilate part of the kernel, is not exposed by any tool and has not been tested. Details: [docs/chavez_transform.md](./docs/chavez_transform.md).
 
 ---
 
@@ -33,17 +33,19 @@ Just as Joseph Fourier revolutionized mathematical physics by extending transfor
 
 ZDTP lifts a 16D sedenion state into 256D space through each of the six Canonical gateways and compares the resulting magnitudes. The six gateways have three independent K_Z kernel components — S3A and S3B share a Fano intersection origin, as do S4 and S5 — but all six are run independently in transmission, and the convergence score reflects the full spread of their output magnitudes.
 
-> **Closed form (2.2.0).** The outputs reduce exactly to $\text{magnitude}_{256D}(k) = \sqrt{\|x\|^2 + 64x_0^2 + 16s_k^2}$, where $s_k$ is a signed sum of four input components, and the convergence score is a function of those six numbers. The zero-divisor property of the gateways does not enter the result: pairs of the same shape that are not zero divisors give the same values. ZDTP outputs are reported as experimental measurements, not structural findings. Derivation and checks: [docs/ZDTP_CLOSED_FORM.md](./docs/ZDTP_CLOSED_FORM.md).
+> **Closed form (2.2.0).** The outputs reduce exactly to magnitude_256d(k) = √(‖x‖² + 64x₀² + 16sₖ²), where sₖ is a signed sum of four input components, and the convergence score is a function of those six numbers. The zero-divisor property of the gateways does not enter the result: pairs of the same shape that are not zero divisors give the same values. ZDTP outputs are reported as experimental measurements, not structural findings. Derivation and checks: [docs/ZDTP_CLOSED_FORM.md](./docs/ZDTP_CLOSED_FORM.md).
 
 ### Transmission Mechanics
 
-Each of the six Canonical Gateway Pairs is a verified bilateral zero divisor in the Cayley-Dickson algebra: two sedenion elements $P$ and $Q$ satisfying both $PQ = 0$ and $QP = 0$. Computed (not formally proved): S2 is also bilateral in the Clifford framework at 16D–256D, the only gateway that is. Before any transmission begins, the oracle reconfirms this property numerically at $10^{-15}$ precision.
+Each of the six Canonical Gateway Pairs is a verified bilateral zero divisor in the Cayley-Dickson algebra: two sedenion elements P and Q satisfying both PQ = 0 and QP = 0. Computed (not formally proved): S2 is also bilateral in the Clifford framework at 16D–256D, the only gateway that is. Before any transmission begins, the oracle reconfirms this property numerically at 10⁻¹⁵ precision.
 
 The transmission step is the four-factor interaction sum:
 
-$$\text{interaction} = Px + xQ + Qx + xP$$
+```text
+interaction = Px + xQ + Qx + xP
+```
 
-where $x$ is the 16D input. Because Cayley-Dickson algebras are quadratic ($uv + vu = -2\langle u, v\rangle$ for pure imaginary $u, v$), this sum simplifies to $2x_0(P+Q) - 2\langle P+Q, x\rangle e_0$: only the input's real part and one signed four-term sum survive. The result is appended to, not substituted for, the original input. The 16D input occupies the first 16 components of the output state unchanged.
+where x is the 16D input. Because Cayley-Dickson algebras are quadratic (uv + vu = −2⟨u, v⟩ for pure imaginary u, v), this sum simplifies to 2x₀(P+Q) − 2⟨P+Q, x⟩e₀: only the input's real part and one signed four-term sum survive. The result is appended to, not substituted for, the original input. The 16D input occupies the first 16 components of the output state unchanged.
 
 This append-and-expand pattern repeats recursively: 16D → 32D → 64D → 128D → 256D. At each stage the original 16D gateway pair is zero-padded into the current dimension and the interaction is appended (the upper-half interaction term is identically zero). The original 16D state is always recoverable as the first 16 components of any higher-dimensional output.
 
@@ -51,7 +53,9 @@ This append-and-expand pattern repeats recursively: 16D → 32D → 64D → 128D
 
 A single transmission through one gateway produces a 256D state. The full cascade runs the same 16D input through all six gateways and compares the resulting 256D magnitudes. The convergence score is:
 
-$$\text{score} = 1 - \frac{\text{std}}{\text{mean}} \quad \text{over the six gateway output magnitudes}$$
+```text
+score = 1 − std / mean   (over the six gateway output magnitudes)
+```
 
 | Score | Stability | Interpretation |
 |-------|-----------|----------------|
@@ -65,13 +69,13 @@ $$\text{score} = 1 - \frac{\text{std}}{\text{mean}} \quad \text{over the six gat
 > step break), so the bands above did not separate structure from noise. The score itself
 > is still reported. See `docs/EVALUATION_CONTRACT.md`.
 
-By the closed form, the six magnitudes differ only through the six signed four-term sums $s_k$. Similar magnitudes mean those sums are similar in size; different magnitudes mean they are not. That is a statement about four-component sums of the input, not about structure in the data.
+By the closed form, the six magnitudes differ only through the six signed four-term sums sₖ. Similar magnitudes mean those sums are similar in size; different magnitudes mean they are not. That is a statement about four-component sums of the input, not about structure in the data.
 
 ### Formal Verification Basis
 
-The six gateway pairs are proved bilateral zero divisors in Lean 4: S1 in `BilateralCollapse.lean` (kernel-checked), and all six in `RHForcingArgument.lean` (by `native_decide`). Those proofs were run once, offline. The verified coordinates are hardcoded as constants in the engine with the Lean file as their attribution source. At runtime, the oracle independently reconfirms the bilateral property numerically before each transmission — not as a Lean call, but as a $10^{-15}$-precision arithmetic gate.
+The six gateway pairs are proved bilateral zero divisors in Lean 4: S1 in `BilateralCollapse.lean` (kernel-checked), and all six in `RHForcingArgument.lean` (by `native_decide`). Those proofs were run once, offline. The verified coordinates are hardcoded as constants in the engine with the Lean file as their attribution source. At runtime, the oracle independently reconfirms the bilateral property numerically before each transmission — not as a Lean call, but as a 10⁻¹⁵-precision arithmetic gate.
 
-For S1, `bilateral_collapse` additionally proves the exact formula $(aP + bQ)(bP + cQ) = -2b(a+c)$, a real scalar, for products of two elements of the pair's span with matched cross-coefficient $b$; `scalar_channel` is its existence form. It does not cover arbitrary pairs of linear combinations.
+For S1, `bilateral_collapse` additionally proves the exact formula (aP + bQ)(bP + cQ) = −2b(a+c), a real scalar, for products of two elements of the pair's span with matched cross-coefficient b; `scalar_channel` is its existence form. It does not cover arbitrary pairs of linear combinations.
 
 The Lean proof is the mathematical guarantee that these six pairs are valid gateways; the runtime oracle is the numerical lock that enforces it.
 
@@ -194,7 +198,7 @@ CAILculator computes natively across two fundamentally different algebraic frame
 ### High-Precision Research
 - **`chavez_transform`** *(experimental)*: 1D Chavez Transform of a series. Returns a fixed center-weighted sum of the series (closed form above) and the verified stability bound. Not a structure detector.
 - **`detect_patterns`**: Multi-stage pipeline identifying linear, geometric, Fibonacci, and complex symmetry patterns.
-- **`verify_bilateral_oracle`**: Exact bilateral zero-divisor check ($PQ = 0 \land QP = 0$) at $10^{-15}$ precision, runnable in either the non-associative **Cayley-Dickson** or associative **Clifford** framework via the `framework` argument. Running both shows where the frameworks differ: computed, S2 is the only Canonical Six gateway bilateral in both, while the others (e.g. S1) are bilateral in Cayley-Dickson but one-sided in Clifford ($\|QP\| = 2\sqrt{2}$). Returns the residual $\|PQ\|$ and $\|QP\|$ norms.
+- **`verify_bilateral_oracle`**: Exact bilateral zero-divisor check (PQ = 0 ∧ QP = 0) at 10⁻¹⁵ precision, runnable in either the non-associative **Cayley-Dickson** or associative **Clifford** framework via the `framework` argument. Running both shows where the frameworks differ: computed, S2 is the only Canonical Six gateway bilateral in both, while the others (e.g. S1) are bilateral in Cayley-Dickson but one-sided in Clifford (‖QP‖ = 2√2). Returns the residual ‖PQ‖ and ‖QP‖ norms.
 - **`map_e8_orbit`** *(experimental)*: Projects a vector onto E8 first-shell Weyl orbits. Currently maps the first 8 coordinates (the octonion half) only — 16D inputs with support in e₈–e₁₅ have that half dropped, so a full-16D vector can report as off-shell. Under active development.
 - **`compute_high_dimensional`**: Direct sedenion algebra operations (multiply, add, conjugate, norm, zero divisor classification) extended into 32D–256D spaces.
 
@@ -211,8 +215,8 @@ CAILculator computes natively across two fundamentally different algebraic frame
 
 ## Technical Specifications
 
-- **Arithmetic**: 64-bit floating point (numpy). Rounding error grows with dimension; products agree with exact values to about $10^{-15}$ at 16D and about $10^{-14}$ at 64D.
-- **Zero divisor thresholds**: `verify_bilateral_oracle`, `compute_high_dimensional`'s `is_zero_divisor` and the transmission gate all require $\|PQ\|$ and $\|QP\|$ below $10^{-15}$. This is a classification threshold, not a precision guarantee (see `docs/EVALUATION_CONTRACT.md`).
+- **Arithmetic**: 64-bit floating point (numpy). Rounding error grows with dimension; products agree with exact values to about 10⁻¹⁵ at 16D and about 10⁻¹⁴ at 64D.
+- **Zero divisor thresholds**: `verify_bilateral_oracle`, `compute_high_dimensional`'s `is_zero_divisor` and the transmission gate all require ‖PQ‖ and ‖QP‖ below 10⁻¹⁵. This is a classification threshold, not a precision guarantee (see `docs/EVALUATION_CONTRACT.md`).
 - **Research Citation**: Grounded in systematic computational enumeration published at Zenodo: [10.5281/zenodo.17402495](https://doi.org/10.5281/zenodo.17402495).
 - **Core Libraries**: `numpy` and `scipy`.
 

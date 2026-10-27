@@ -2,6 +2,21 @@
 
 All notable changes to the CAILculator MCP Server will be documented in this file.
 
+## [2.2.1] - 2026-10-27
+
+Documentation-only release: the package description on PyPI. No code or output changes.
+
+### Changed
+- README: the Chavez Transform introduction no longer compares the transform to Fourier's
+  ("takes the next structural leap"). It states the one claim made: to our knowledge, no
+  earlier integral transform uses zero divisors in its kernel, and no property comparable
+  to those of the classical transforms has been shown. `docs/chavez_transform.md`
+  replaces its "Transform Lineage" section with a short Background section to match.
+- README: math is written in plain Unicode instead of LaTeX, which PyPI does not render
+  (the 2.2.0 page showed blanks for the closed forms, the stability bound and the
+  10⁻¹⁵ thresholds).
+- Golden suite version 6: the `get_version` case expects 2.2.1.
+
 ## [2.2.0] - 2026-10-27
 
 Golden test suite, response provenance, and real profile gates. Bundled with the
