@@ -53,9 +53,23 @@ where the kernel $K$ encodes the zero divisor structure of the gateway pair. The
 
 - **Bilateral annihilation**: $P \times Q = 0$ and $Q \times P = 0$ — the kernel carries algebraic collapse built in
 - **Non-associative interaction**: Because sedenions are non-associative, the four orderings $Px$, $xQ$, $Qx$, $xP$ are algebraically distinct. The kernel spans all four.
-- **Structural filtering**: Noise and chaotic fluctuations collapse near zero symmetrically; underlying structural invariants scale cleanly
+Earlier versions of this page also claimed **structural filtering** (noise collapsing near zero while structure scales cleanly). That has not been shown, and for the transform the tools ship it is ruled out by the closed form below.
 
-The discrete analogue — used in CAILculator's computational implementation — applies the four-factor interaction to each input coordinate, then measures how the output structure distributes across the six canonical gateways.
+## What the shipped tools compute: the 1D closed form
+
+The `chavez_transform` tool and `analyze_dataset` use the one-dimensional transform (`transform_1d`). Embedding a 1D argument in the sedenions collapses the kernel to a function of the pair's norms only. `ChavezTransform_genuine.lean` proves this as lemma `K_Z_realToSed`:
+
+$$K_Z(P, Q, x) = 2x^2\left(\|P\|^2 + \|Q\|^2\right)$$
+
+and its header notes that both theorems are "unconditional on P*Q=0 (zero divisor property not required)". The shipped code embeds on $e_1$ rather than $e_0$ and gets the same result: $8x^2$ for every gateway pair of the Canonical Six shape (two basis elements each, coefficients $\pm 1$), zero divisor or not. The tools apply the transform to a Gaussian-smoothed version of the series, so the output is a fixed weighted sum:
+
+$$T = \sum_i \text{data}_i \, w_i, \qquad w_i = \int_{-5}^{5} e^{-(x - t_i)^2} \cdot 8x^2 e^{-\alpha x^2} \left(1 + x^2\right)^{-d/2} dx, \qquad t_i = \text{linspace}(-5, 5, n)$$
+
+The weights depend only on the series length $n$, $\alpha$ and $d$. At $\alpha = 1$, $d = 2$ (the `analyze_dataset` setting) about 90% of the weight falls on the middle 40% of the series, and the first and last 20% get 0.7% combined.
+
+**Checks.** The formula matched the shipped code on 1,262 calls (maximum relative error 1.7e-14). Pairs that are not zero divisors, such as $(e_1 + e_2, e_3 + e_4)$, return bit-identical values to the Canonical Six pairs, at default and non-default $\alpha$ and $d$.
+
+**What this means.** The 1D value is a center-weighted sum of the data. It carries no zero-divisor information, and it is reported as an experimental measurement, not a structural signal. The n-dimensional transform (`transform_nd`), whose kernel is a quadratic form that zero divisors can annihilate, is not exposed by any tool and has not been tested.
 
 ---
 
@@ -73,7 +87,8 @@ This bound guarantees that transform outputs never exceed a computable multiple 
 
 - **Unconditional convergence**: For any bounded integrable function, the transform converges. There is no regime in which the output diverges unboundedly.
 - **Interpretable scaling**: The constant $M$ depends only on the gateway norms and the decay parameter $\alpha$ — both known quantities. A researcher can compute the bound before running the transform.
-- **Lean-verified**: This is not a numerical observation. The bound is formally proved from axioms with zero sorry stubs — no unproven placeholders anywhere in the proof chain.
+- **Lean-verified**: This is not a numerical observation. The bound is formally proved from standard axioms with zero sorry stubs — no unproven placeholders anywhere in the proof chain.
+- **Not specific to zero divisors**: the bound holds for any pair $(P, Q)$; it does not use $P \times Q = 0$.
 
 ### The Alpha Parameter
 
@@ -93,16 +108,16 @@ $$(aP + bQ) \times (bP + cQ) = (-2b(a + c)) \cdot e_0$$
 
 All such products collapse cleanly to the real channel — no spurious imaginary components are generated at any dimensional stage. The scalar value $-2b(a+c)$ is computed explicitly in the companion `bilateral_collapse` theorem in `lean/BilateralCollapse.lean`.
 
-This theorem is the algebraic guarantee that the transform's filtering action is clean. Noise does not scatter into new imaginary dimensions; it collapses toward the scalar. This property is what makes the Chavez Transform useful as a structural detector rather than merely a high-dimensional projection.
+This is a statement about products of elements within a gateway pair's span. It does not, by itself, imply any filtering property for data passed through the transform, and no such property has been validated.
 
 ---
 
 ## Formal Verification Chain
 
-The mathematical claims made by CAILculator are not empirical observations — they are formally proved theorems. The verification chain has three layers:
+The algebraic claims on this page (the zero divisor identities, the stability bound, the 1D kernel formula, the scalar channel) are formally proved. Claims about what the transform detects in data are empirical and, so far, not validated. The verification chain for the algebraic claims has three layers:
 
 **Layer 1 — Lean 4 proof (offline, static)**
-`ChavezTransform_genuine.lean` proves the convergence theorem, stability bound, and pattern invariance from first principles. The proof was verified by Aristotle (Harmonic Math's independent Lean 4 verification engine) with zero sorry stubs.
+`ChavezTransform_genuine.lean` proves the stability bound and the exact 1D kernel formula (`K_Z_realToSed`, the "pattern invariance") from first principles. The proof was verified by Aristotle (Harmonic Math's independent Lean 4 verification engine) with zero sorry stubs. The file's convergence theorem holds trivially as stated: the bound it exhibits is the transform's own value. The stability bound is the substantive result.
 
 **Layer 2 — Hardcoded constants (attribution-linked)**
 The verified gateway coordinates are hardcoded as constants in `core/canonical_six.py`, with `BilateralCollapse.lean` as their explicit attribution source. The code does not compute which elements are zero divisors at runtime — this was determined once, formally, offline.
@@ -116,31 +131,29 @@ Before each transform operation, `verify_bilateral_collapse()` independently rec
 
 ### For AI and representation learning
 
-Standard embedding spaces (Euclidean, Hilbert) treat all dimensions as equivalent. Sedenion space, by contrast, has intrinsic geometric structure — the zero divisor set forms a manifold with specific symmetry properties. Mapping data into sedenion space and applying the Chavez Transform probes whether the data's structure aligns with this manifold.
-
-Inputs that are structurally coherent — that carry genuine pattern — propagate cleanly through the zero divisor kernel. Inputs dominated by noise collapse near zero. The transform is a structural discriminator, not a compression function.
+Sedenion space has intrinsic geometric structure: the zero divisor set forms a manifold with specific symmetry properties. Whether a transform can probe how data aligns with it is an open research question. The shipped 1D transform cannot, because its kernel does not depend on the zero divisor property (closed form above). The n-dimensional transform is the candidate, and it has not been tested.
 
 ### For prime number theory and the Riemann Hypothesis
 
-The RHI profile maps Riemann zeros $\gamma_n$ and prime logarithms $\log p$ into the sedenion gateway structure. The empirical finding — confirmed across CAILculator Runs A through C — is that Riemann zeros on the critical line produce HIGH convergence scores (>0.8) across all six canonical gateways, while perturbed inputs do not. This is a numerical observation, not a formal theorem.
+The RHI mapping (shipped as the `rhi` profile until 2.2.0) sends Riemann zeros $\gamma_n$ and prime logarithms $\log p$ into the sedenion gateway structure. The empirical finding — confirmed across CAILculator Runs A through C — is that Riemann zeros on the critical line produce HIGH convergence scores (>0.8) across all six canonical gateways, while perturbed inputs do not. This is a numerical observation, not a formal theorem, and it is being re-checked: ZDTP convergence has an exact closed form that reduces it to four-term sums of the mapped inputs (`docs/ZDTP_CLOSED_FORM.md`).
 
 Separately, and not to be conflated with it, the CAIL-RH Investigation (Phases 1–74+) has developed three independent standard-axiom characterizations of the critical line in Lean 4: the energy-minimum, spectral-containment, and arithmetic-integrality routes. These are formally proved results; the HIGH-convergence empirical finding is a distinct, corroborating numerical observation.
 
 ### For investigative journalism
 
-The Journalism profile applies the transform to public datasets — campaign finance records, voting patterns, economic indicators — treating each data point as a 16D sedenion embedding. The Chavez Transform identifies "tipping points": moments where structural coherence shifts abruptly, signaling a regime change in the underlying data-generating process. These are algebraically detected, not label-dependent heuristics.
+The Journalism profile applies the transform to public datasets such as campaign finance records, treating each data point as a 16D sedenion embedding. Since profile 3.0.0 it reports measured quantities only (`measured_only`): no regime, tipping-point or pattern verdicts. No journalism-specific interpretation of these quantities has passed a validation gate.
 
 ### For quantitative finance
 
-The Quant Equity profile uses the transform as the structural layer in regime analysis. The `analyze_dataset` tool runs a full three-layer pipeline: Chavez Transform stability scoring, pattern detection, and a ZDTP full cascade across all six gateways to 256D. The result is a regime classification — STABLE, TRANSITIONING, or SHIFTING — together with a convergence score and per-gateway magnitude breakdown. The tool accepts a close-price list or an OHLCV dict and requires a minimum of 16 data points.
+The Quant Equity profile runs `analyze_dataset`'s three layers on price data: the Chavez Transform value, pattern detection, and a ZDTP cascade across all six gateways to 256D. It returns a convergence score and per-gateway magnitudes. Since 2.2.0 the regime classification is withheld (`not_assessed`) because no regime detector has passed a validation gate. No test links zero divisors to volatility or market regimes. The tool accepts a close-price list or an OHLCV dict and requires a minimum of 16 data points.
 
 ---
 
 ## Practical Notes for Researchers
 
 - **Input preparation**: Data must be mapped to the non-real sedenion channels ($e_1$–$e_{15}$). Placing data in index 0 (the real unit $e_0$) introduces a scalar component that prevents zero divisor detection, since $e_0 \times x \neq 0$ for any $x$. CAILculator v2.1.2 issues a validation warning if a non-zero index-0 component is detected.
-- **Alpha selection**: Start with $\alpha = 1.0$ for exploratory analysis. Increase toward 5.0 to sharpen sensitivity to local structure; decrease toward 0.1 for broader structural survey. The stability bound $M$ changes with $\alpha$ — check it before interpreting magnitudes across different runs.
-- **Convergence score vs. transform output**: The convergence score (from `zdtp_transmit`) measures structural coherence across the six gateways. The transform output (from `chavez_transform`) measures the structural content of individual inputs. These are complementary, not interchangeable.
+- **Alpha and d**: in the 1D closed form they only reshape the weights $w_i$. The stability bound $M$ changes with $\alpha$, so check it before comparing magnitudes across runs.
+- **Convergence score vs. transform output**: the convergence score (from `zdtp_transmit`) is a function of six signed four-term sums of the input (`docs/ZDTP_CLOSED_FORM.md`). The 1D transform output (from `chavez_transform`) is a center-weighted sum of the series. Neither has been validated as a measure of structure.
 
 ---
 

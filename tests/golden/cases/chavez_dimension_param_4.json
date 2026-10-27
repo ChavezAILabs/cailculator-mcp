@@ -1,0 +1,51 @@
+{
+  "id": "chavez_dimension_param_4",
+  "tool": "chavez_transform",
+  "args": {
+    "data": [
+      1.0,
+      2.0,
+      3.0,
+      5.0,
+      8.0,
+      13.0,
+      21.0,
+      34.0,
+      55.0,
+      89.0,
+      144.0,
+      233.0,
+      377.0,
+      610.0,
+      987.0,
+      1597.0
+    ],
+    "alpha": 1.0,
+    "dimension_param": 4
+  },
+  "verification": "recorded",
+  "source": "AIEX-984",
+  "notes": "Pins current dimension_param behavior: only the decay exponent d in Omega_d(x) = (1+|x|^2)^(-d/2), not the algebra dimension (fixed at 32).",
+  "record_keys": [
+    "success",
+    "transform_value",
+    "stability_bound.M",
+    "stability_bound.satisfied",
+    "stability_bound.ratio"
+  ],
+  "expected": {
+    "success": true,
+    "transform_value": 308.3245623095811,
+    "stability_bound": {
+      "M": 2.9430355293715387,
+      "satisfied": true,
+      "ratio": 0.018529312576337734
+    }
+  },
+  "expected_input_hash": "sha256:6f5c707ab1190e43a62a58b11b36eee921081dbb590a3baa48bc1036bc3b6b61",
+  "tolerance": {
+    "transform_value": 3.083245623095811e-07,
+    "stability_bound.M": 2.9430355293715387e-09,
+    "stability_bound.ratio": 1.8529312576337736e-11
+  }
+}

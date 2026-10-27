@@ -1,0 +1,40 @@
+{
+  "id": "journalism_edge_nan",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": [
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      {
+        "$float": "nan"
+      },
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0
+    ],
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "edge case (handoff 3B)",
+  "notes": "NaN in the series.",
+  "profile": "journalism",
+  "expected": {
+    "success": false,
+    "error": "'data' contains non-finite value(s) (NaN/Inf) at index/indices [5]"
+  },
+  "expected_input_hash": "sha256:c467f9f91db0b84dcc3bbc515ff674dcfb53228c76110a6f442ac7da528774c3#repr"
+}

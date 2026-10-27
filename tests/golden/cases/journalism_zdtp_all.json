@@ -1,0 +1,96 @@
+{
+  "id": "journalism_zdtp_all",
+  "tool": "zdtp_transmit",
+  "args": {
+    "input_16d": [
+      0.0,
+      1.0,
+      2.036967262,
+      2.922882062,
+      2.135849544,
+      2.368502545,
+      4.181060375,
+      2.273073743,
+      2.441286326,
+      3.898603546,
+      3.617187999,
+      4.293929342,
+      5.560871085,
+      5.060684128,
+      5.412628745,
+      7.10693749
+    ],
+    "gateway": "all",
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "live output 2026-09-24",
+  "notes": "First 15 politics values relative to the first.",
+  "profile": "journalism",
+  "record_keys": [
+    "success",
+    "convergence.score",
+    "convergence.mean_magnitude",
+    "convergence.std_dev",
+    "convergence.stability_level",
+    "gateways.S1.gateway_label",
+    "gateways.S1.magnitude_256d",
+    "gateways.S2.gateway_label",
+    "gateways.S2.magnitude_256d",
+    "gateways.S3A.gateway_label",
+    "gateways.S3A.magnitude_256d",
+    "gateways.S3B.gateway_label",
+    "gateways.S3B.magnitude_256d",
+    "gateways.S4.gateway_label",
+    "gateways.S4.magnitude_256d",
+    "gateways.S5.gateway_label",
+    "gateways.S5.magnitude_256d"
+  ],
+  "expected": {
+    "success": true,
+    "convergence": {
+      "score": 0.5666233263333427,
+      "mean_magnitude": 42.58718844443644,
+      "std_dev": 18.456294068864974,
+      "stability_level": "not_assessed"
+    },
+    "gateways": {
+      "S1": {
+        "gateway_label": "S1",
+        "magnitude_256d": 61.53021328295914
+      },
+      "S2": {
+        "gateway_label": "S2",
+        "magnitude_256d": 59.877949720426045
+      },
+      "S3A": {
+        "gateway_label": "S3A",
+        "magnitude_256d": 60.032615636862076
+      },
+      "S3B": {
+        "gateway_label": "S3B",
+        "magnitude_256d": 32.10780941852854
+      },
+      "S4": {
+        "gateway_label": "S4",
+        "magnitude_256d": 16.58687510850441
+      },
+      "S5": {
+        "gateway_label": "S5",
+        "magnitude_256d": 25.387667499338413
+      }
+    }
+  },
+  "expected_input_hash": "sha256:d2363f730acfa081c4183c02aec50d0f132c29f85708975645a0830fbfb21347",
+  "tolerance": {
+    "convergence.score": 5.666233263333427e-10,
+    "convergence.mean_magnitude": 4.2587188444436444e-08,
+    "convergence.std_dev": 1.8456294068864974e-08,
+    "gateways.S1.magnitude_256d": 6.153021328295914e-08,
+    "gateways.S2.magnitude_256d": 5.987794972042605e-08,
+    "gateways.S3A.magnitude_256d": 6.003261563686208e-08,
+    "gateways.S3B.magnitude_256d": 3.210780941852854e-08,
+    "gateways.S4.magnitude_256d": 1.6586875108504412e-08,
+    "gateways.S5.magnitude_256d": 2.5387667499338415e-08
+  }
+}

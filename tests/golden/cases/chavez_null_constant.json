@@ -1,0 +1,52 @@
+{
+  "id": "chavez_null_constant",
+  "tool": "chavez_transform",
+  "args": {
+    "data": [
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0,
+      5.0
+    ],
+    "alpha": 1.0,
+    "dimension_param": 2
+  },
+  "verification": "recorded",
+  "source": "AIEX-996 null control",
+  "notes": "Flat array.",
+  "record_keys": [
+    "success",
+    "transform_value",
+    "stability_bound.M",
+    "stability_bound.satisfied",
+    "stability_bound.ratio"
+  ],
+  "null_control": true,
+  "expected": {
+    "success": true,
+    "transform_value": 45.64001375216584,
+    "stability_bound": {
+      "M": 2.9430355293715387,
+      "satisfied": true,
+      "ratio": 0.11993586338239226
+    }
+  },
+  "expected_input_hash": "sha256:06b8bf584871ad8a94e198ca88b3aea1feb2792e5c8392919babfeefc6410291",
+  "tolerance": {
+    "transform_value": 4.5640013752165844e-08,
+    "stability_bound.M": 2.9430355293715387e-09,
+    "stability_bound.ratio": 1.1993586338239226e-10
+  }
+}

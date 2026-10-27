@@ -1,0 +1,59 @@
+{
+  "id": "cd16_s1_lean",
+  "tool": "compute_high_dimensional",
+  "args": {
+    "operation": "is_zero_divisor",
+    "dimension": 16,
+    "a": [
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    "b": [
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "verification": "lean",
+  "source": "lean/BilateralCollapse.lean, theorem Pattern1_CD4 (P1 4 = e1 + e14, Q1 4 = e3 + e12, CD 4 = sedenions)",
+  "notes": "The only Canonical Six pattern with a Lean proof in this repo. Bilateral: PQ = 0 and QP = 0 exactly.",
+  "agreement_group": "cd16_s1",
+  "expected": {
+    "success": true,
+    "is_bilateral_zero_divisor": true,
+    "PQ_norm": 0.0,
+    "QP_norm": 0.0
+  },
+  "tolerance": {
+    "PQ_norm": 1e-15,
+    "QP_norm": 1e-15
+  },
+  "expected_input_hash": "sha256:b2012d1de18d1d3a32e601429e63dc5667d64272ac17734f4500adbadfd83550"
+}

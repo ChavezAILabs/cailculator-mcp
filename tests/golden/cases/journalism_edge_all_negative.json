@@ -1,0 +1,80 @@
+{
+  "id": "journalism_edge_all_negative",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": [
+      -32066.21,
+      -65317.82,
+      -93725.75,
+      -68488.6,
+      -75948.9,
+      -134070.76,
+      -72888.86,
+      -78282.8,
+      -125013.44,
+      -115989.51,
+      -137690.04,
+      -178316.06,
+      -162276.96,
+      -173562.49,
+      -227892.55,
+      -188811.53,
+      -189313.42,
+      -239597.53,
+      -174342.0,
+      -188515.29,
+      -315535.43,
+      -208981.61,
+      -237857.3,
+      -308480.47,
+      -42586.61,
+      -52182.24,
+      -81227.75,
+      -71589.36,
+      -89075.66,
+      -122198.65,
+      -95163.29,
+      -120229.46,
+      -145442.73,
+      -143436.52,
+      -130323.76,
+      -215582.5,
+      -130122.25,
+      -161495.63,
+      -220545.24,
+      -169320.35,
+      -206581.05,
+      -191909.62,
+      -205661.17,
+      -219631.15,
+      -272919.84,
+      -256723.23,
+      -224103.3,
+      -329130.54
+    ],
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "edge case (handoff 3B)",
+  "notes": "Negated politics series.",
+  "profile": "journalism",
+  "expected_structural_findings": [],
+  "record_keys": [
+    "success",
+    "data_points",
+    "regime.classification",
+    "regime.convergence_score"
+  ],
+  "expected": {
+    "success": true,
+    "data_points": 48,
+    "regime": {
+      "classification": "not_assessed",
+      "convergence_score": 0.5368
+    }
+  },
+  "expected_input_hash": "sha256:f622b40118b3579ffde6c9c20876d469802eed3bb254a39112a1024708798d5b",
+  "tolerance": {
+    "regime.convergence_score": 5.368e-10
+  }
+}

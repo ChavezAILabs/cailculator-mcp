@@ -4,3 +4,4 @@ include LICENSE
 recursive-include lean *.lean
 recursive-include assets/templates *.json
 recursive-include src/cailculator_mcp *.py
+recursive-include src/cailculator_mcp/profiles *.json

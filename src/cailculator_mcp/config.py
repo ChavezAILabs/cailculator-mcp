@@ -4,11 +4,13 @@ Configuration Management for CAILculator MCP
 
 import os
 from functools import lru_cache
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
+
+    model_config = SettingsConfigDict(env_prefix="CAILCULATOR_", env_file=".env", case_sensitive=False)
 
     # API Key (set by user in MCP client config)
     api_key: str = ""
@@ -22,11 +24,6 @@ class Settings(BaseSettings):
 
     # Logging
     log_level: str = "INFO"
-
-    class Config:
-        env_prefix = "CAILCULATOR_"
-        env_file = ".env"
-        case_sensitive = False
 
 
 @lru_cache()

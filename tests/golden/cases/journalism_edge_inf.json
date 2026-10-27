@@ -1,0 +1,40 @@
+{
+  "id": "journalism_edge_inf",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": [
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      {
+        "$float": "inf"
+      },
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0,
+      100.0
+    ],
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "edge case (handoff 3B)",
+  "notes": "Infinity in the series.",
+  "profile": "journalism",
+  "expected": {
+    "success": false,
+    "error": "'data' contains non-finite value(s) (NaN/Inf) at index/indices [7]"
+  },
+  "expected_input_hash": "sha256:3311848f9a8eb0296e42258273f7db9f26bfa417ac3f78a1bd32fa753e907b21#repr"
+}

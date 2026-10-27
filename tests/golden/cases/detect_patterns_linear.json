@@ -1,0 +1,60 @@
+{
+  "id": "detect_patterns_linear",
+  "tool": "detect_patterns",
+  "args": {
+    "data": [
+      3.0,
+      7.0,
+      11.0,
+      15.0,
+      19.0,
+      23.0,
+      27.0,
+      31.0,
+      35.0,
+      39.0,
+      43.0,
+      47.0,
+      51.0,
+      55.0,
+      59.0,
+      63.0,
+      67.0,
+      71.0,
+      75.0,
+      79.0
+    ]
+  },
+  "verification": "recorded",
+  "source": "live output 2026-09-24",
+  "notes": "Arithmetic sequence 3, 7, 11, ...",
+  "record_keys": [
+    "success",
+    "patterns_detected"
+  ],
+  "expected": {
+    "success": true,
+    "patterns_detected": [
+      {
+        "type": "polynomial_trend",
+        "confidence": 1.0,
+        "description": "Wildcard: degree-1 polynomial fit  (R² = 1.0000)",
+        "metrics": {
+          "degree": 1,
+          "r_squared": 1.0
+        }
+      },
+      {
+        "type": "linear_sequence",
+        "confidence": 0.92,
+        "description": "Linear (arithmetic) sequence — constant difference 4",
+        "metrics": {
+          "common_difference": 4.0,
+          "std_of_differences": 0.0
+        }
+      }
+    ]
+  },
+  "expected_input_hash": "sha256:65532a902cf3bde27d7832dcf464cdefca14c6ad735a95372816ad967ba24780",
+  "tolerance": {}
+}

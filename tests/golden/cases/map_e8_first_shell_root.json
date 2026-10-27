@@ -1,0 +1,37 @@
+{
+  "id": "map_e8_first_shell_root",
+  "tool": "map_e8_orbit",
+  "args": {
+    "vector": [
+      1.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "verification": "recorded",
+  "source": "live output 2026-09-24",
+  "notes": "(1,1,0,...,0) has norm^2 = 2: an E8 root on the first shell.",
+  "record_keys": [
+    "success",
+    "orbit_id",
+    "norm_squared_8d",
+    "is_on_first_shell",
+    "classification"
+  ],
+  "expected": {
+    "success": true,
+    "orbit_id": 1,
+    "norm_squared_8d": 2.0,
+    "is_on_first_shell": true,
+    "classification": "Sparse/Type1"
+  },
+  "expected_input_hash": "sha256:b685ab544264cb54119e9fec26e97a63af05cc06cdc6fdb1c119d8a51969df3a",
+  "tolerance": {
+    "norm_squared_8d": 2e-09
+  }
+}

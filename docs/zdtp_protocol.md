@@ -8,7 +8,11 @@
 
 The Zero Divisor Transmission Protocol is the structural transmission layer of CAILculator. It lifts a 16-dimensional sedenion state into 256-dimensional space — preserving the original state throughout — then measures how consistently the data's structure propagates across six algebraic transmission pathways.
 
-ZDTP answers a specific research question: **does this data carry structure that is stable across the full Cayley-Dickson algebraic geometry, or does it align preferentially with some algebraic channels and not others?** The answer is expressed as a single convergence score between 0 and 1, backed by formally verified algebra.
+ZDTP was designed to ask whether data carries structure that is stable across the Cayley-Dickson algebraic geometry, or aligns with some algebraic channels and not others. The answer is a single convergence score.
+
+> **Closed form (2.2.0). Read this first.** The outputs reduce exactly to
+> $$m_k = \text{magnitude}_{256D}(k) = \sqrt{\|x\|^2 + 64x_0^2 + 16s_k^2}, \qquad s_k = \langle P_k + Q_k, x\rangle,$$
+> where $s_k$ is a signed sum of four input components, and the convergence score is a function of the six $m_k$. The zero-divisor property of the gateways does not enter the result: same-shape pairs that are not zero divisors give the same rank-2 interaction map and the same values. ZDTP outputs are therefore reported as experimental measurements, not structural findings. The algebraic facts below (the tower, the bilateral identities, the oracle) are correct; the interpretive claims in earlier versions of this page are corrected where they appear. Derivation and numerical checks: [ZDTP_CLOSED_FORM.md](./ZDTP_CLOSED_FORM.md).
 
 ---
 
@@ -22,7 +26,7 @@ $$\mathbb{R} \to \mathbb{C} \to \mathbb{H} \to \mathbb{O} \to \mathbb{S} \to \ma
 
 preserves the previous algebra as a subalgebra while introducing new structure. The sedenions are the first algebra in this tower to contain **zero divisors** — non-zero elements whose product is zero. The 32-dimensional **pathions** $\mathbb{P}$ and the 64-dimensional, 128-dimensional, and 256-dimensional algebras beyond them each inherit and extend this zero divisor structure.
 
-ZDTP exploits this tower. A 16D sedenion state is transmitted upward through the tower to 256D, using the zero divisor structure at each level as the transmission mechanism.
+ZDTP transmits a 16D sedenion state upward through this tower to 256D, using a zero divisor pair at each level. As the closed form shows, the result does not depend on the pair being a zero divisor.
 
 ### Why Non-Associativity Matters
 
@@ -32,7 +36,11 @@ When a 16D input $x$ interacts with a gateway pair $(P, Q)$, the four orderings:
 
 $$Px, \quad xQ, \quad Qx, \quad xP$$
 
-are **algebraically distinct**. In an associative algebra, these orderings could be reduced or reordered without loss. In sedenion space, each ordering probes a different structural relationship between the input and the gateway. Together, the four-factor interaction sum spans the full interaction space of the gateway and the input — nothing is collapsed or approximated.
+are individually distinct products. Their sum is not: Cayley-Dickson algebras are quadratic, so $uv + vu = -2\langle u, v\rangle$ for pure imaginary $u, v$, and the four-factor sum collapses to
+
+$$Px + xQ + Qx + xP = 2x_0(P + Q) - 2\langle P + Q, x\rangle e_0.$$
+
+Only the input's real part $x_0$ and one signed four-term sum survive; the interaction map has rank 2. Non-associativity plays no part in the result.
 
 ---
 
@@ -75,7 +83,7 @@ For a 16D input vector $x$ and a gateway pair $(P, Q)$, the interaction step com
 
 $$\text{interaction} = Px + xQ + Qx + xP$$
 
-Each term is a sedenion product — non-commutative and non-associative, so all four are distinct. The interaction vector captures how the input relates to the gateway from every algebraic direction.
+Each term is a sedenion product, but the sum collapses to $2x_0(P+Q) - 2\langle P+Q, x\rangle e_0$ (see above): two numbers, $x_0$ and $\langle P+Q, x\rangle$, determine it.
 
 The result is **appended** to the original input, not substituted for it:
 
@@ -89,7 +97,7 @@ The append-and-expand pattern repeats recursively through the Cayley-Dickson tow
 
 $$16\text{D} \xrightarrow{S_i} 32\text{D} \xrightarrow{S_i} 64\text{D} \xrightarrow{S_i} 128\text{D} \xrightarrow{S_i} 256\text{D}$$
 
-At each stage, the original 16D gateway pair is **zero-padded** into the current dimension before the interaction step. This preserves the algebraic identity of the gateway across all dimensions — the same bilateral zero divisor pair that was verified in 16D continues to operate as the transmission mechanism in 32D, 64D, 128D, and 256D.
+At each stage, the original 16D gateway pair is **zero-padded** into the current dimension before the interaction step. The same pair is used at every stage. Above 16D the upper-half interaction term is identically zero, and the growth in dimension comes from concatenation (state plus interaction), not from new algebraic content.
 
 The full transmission through a single gateway produces a 256D state vector. The original 16D input is always the first 16 components.
 
@@ -97,11 +105,11 @@ The full transmission through a single gateway produces a 256D state vector. The
 
 Before any transmission begins, the bilateral oracle independently reconfirms the zero divisor property of the gateway pair numerically:
 
-$$|P \times Q| < 10^{-10} \quad \text{and} \quad |Q \times P| < 10^{-10}$$
+$$|P \times Q| < 10^{-15} \quad \text{and} \quad |Q \times P| < 10^{-15}$$
 
-This check runs at $10^{-15}$ floating-point precision. It is not a Lean call — it is a numpy arithmetic gate that runs on every transmission. The Lean proof (`BilateralCollapse.lean`) established which pairs are valid gateways; the runtime oracle enforces this on every execution.
+The check runs in float64 arithmetic. It is not a Lean call — it is a numpy arithmetic gate that runs on every transmission. The Lean proof (`BilateralCollapse.lean`) established which pairs are valid gateways; the runtime oracle enforces this on every execution.
 
-*Note on thresholds*: The $10^{-15}$ figure is the engine's general floating-point precision standard. The $10^{-10}$ figure is the zero divisor classification gate — the threshold below which a product is classified as algebraically zero. These measure different things and are not contradictory.
+*Note on thresholds*: $10^{-15}$ is the zero divisor classification gate, the norm below which a product counts as zero. Every zero-divisor check in CAILculator uses it (see `docs/EVALUATION_CONTRACT.md`). Earlier versions of this page said $10^{-10}$; the gateway check has always used $10^{-15}$.
 
 ---
 
@@ -129,13 +137,15 @@ where $\sigma$ is the standard deviation and $\mu$ is the mean of the six magnit
 | 0.5–0.8 | MODERATE | Detectable structural variation across gateways |
 | < 0.5 | LOW | Structural asymmetry or regime shift in the input data |
 
+> **Validation status (2.2.0):** these bands are not applied as verdicts. `stability_level`
+> is reported as `"not_assessed"` because, on 200 seeded null series fed through
+> `analyze_dataset`, the score fell in 0.54–0.65, the same range as every structured series
+> tested. The interpretations in this section are hypotheses until a gate run supports them.
+> See `docs/EVALUATION_CONTRACT.md`.
+
 ### What Convergence Means
 
-HIGH convergence means the data carries structure that is **gateway-independent** — it propagates the same way regardless of which algebraic channel carries it. This is the signature of a genuine structural invariant, not a feature that happens to align with one particular algebraic direction.
-
-LOW convergence means the data aligns with some gateways and not others. This indicates directional asymmetry in the sedenion space — the data's structure has a preferred algebraic orientation. In financial data, this typically precedes or coincides with regime transitions. In prime number data, inputs on the Riemann critical line consistently produce HIGH convergence; perturbed inputs do not.
-
-MODERATE convergence is the most information-rich regime for exploratory research — it indicates partial structural coherence that warrants deeper investigation.
+By the closed form, the six magnitudes differ only through the six signed four-term sums $s_k$, so the score measures how similar those sums are in size relative to $\|x\|$ and $x_0$. It is not evidence of gateway-independent structure. Earlier versions of this page read HIGH convergence as "the signature of a genuine structural invariant" and LOW convergence as preceding market regime transitions; neither reading has been validated, and on 200 seeded null series the score fell in the same range as every structured series tested. The Riemann critical-line results (see Research Applications) are being re-checked against the closed form.
 
 ---
 
@@ -149,7 +159,7 @@ MODERATE convergence is the most information-rich regime for exploratory researc
 
 **scalar_channel**: For any scalars $a, b, c$, the product $(aP + bQ)(bP + cQ) = (-2b(a+c)) \cdot e_0$. Any product of two elements drawn from the span of a gateway pair — with matched cross-coefficient structure — collapses cleanly to the real channel. No spurious imaginary components are generated at any transmission stage.
 
-The scalar_channel theorem is the algebraic guarantee that ZDTP's dimensional expansion is clean. At each doubling stage, the interaction does not scatter energy into unexpected dimensions — it propagates the structural content of the input faithfully.
+The scalar_channel theorem is a statement about products within a gateway pair's span. It does not, by itself, say anything about how data passes through ZDTP; that is fixed by the closed form above.
 
 ### The Lean-to-Runtime Pipeline
 
@@ -167,9 +177,9 @@ The formal verification chain operates in three stages:
 
 ### Riemann Hypothesis Investigation
 
-The deepest application of ZDTP to date is the CAIL-RH Investigation (74+ phases as of May 2026). The protocol maps Riemann zeros $\gamma_n$ into 16D sedenion space via the RHI profile ($\log p \to ROOT_{16D}$) and transmits them through the full ZDTP cascade.
+The deepest application of ZDTP to date is the CAIL-RH Investigation (74+ phases as of May 2026). The protocol maps Riemann zeros $\gamma_n$ into 16D sedenion space via the RHI mapping ($\log p \to ROOT_{16D}$; shipped as the `rhi` profile until 2.2.0) and transmits them through the full ZDTP cascade.
 
-Empirical finding across CAILculator Runs A–C: inputs corresponding to zeros on the critical line ($\text{Re}(s) = \frac{1}{2}$) consistently produce HIGH convergence (>0.8) across all six gateways, while perturbed inputs do not. This convergence universality — confirmed across Runs A–C and holding at every tested zero, not merely on average — is a numerical observation.
+Empirical finding across CAILculator Runs A–C: inputs corresponding to zeros on the critical line ($\text{Re}(s) = \frac{1}{2}$) consistently produce HIGH convergence (>0.8) across all six gateways, while perturbed inputs do not. This convergence universality — confirmed across Runs A–C and holding at every tested zero, not merely on average — is a numerical observation. It is being re-checked: by the closed form it reduces to four-term sums of the mapped zeros, and it has not yet been compared with same-shape non-zero-divisor pairs.
 
 Separately, and not to be conflated with it, the CAIL-RH Investigation has developed three independent standard-axiom characterizations of the critical line in Lean 4: the energy-minimum, spectral-containment, and arithmetic-integrality routes (Phase 74+). These are formally proved results; the HIGH-convergence empirical finding is a distinct, corroborating numerical observation from the same research program.
 
@@ -180,29 +190,26 @@ Bitcoin rolling window analysis (718 windows, January 2024–January 2026) using
 - **LOW stability events** at June and December 2024 consolidation periods — both preceded large directional moves
 - **HIGH stability** at the January 2025 correction — structural coherence despite price turbulence
 
-The ZDTP convergence score provides a single structural signal. HIGH convergence (>0.8) indicates the market's structure propagates uniformly across all six algebraic pathways — a stable regime. LOW convergence indicates structural asymmetry that typically precedes or coincides with regime transitions. The `analyze_dataset` tool automates this interpretation, returning STABLE, TRANSITIONING, or SHIFTING classifications.
+This is a single-series observation without controls, not a validated signal. No test has shown that ZDTP convergence predicts or coincides with market regime changes, and since 2.2.0 `analyze_dataset` withholds its regime classification (`not_assessed`) until a detector passes a validation gate.
 
 ### Investigative Journalism
 
-The Journalism profile treats public datasets as structural objects rather than statistical samples. A dataset with HIGH ZDTP convergence carries self-consistent structure across all algebraic channels — it behaves like a coherent signal. Abrupt drops to LOW convergence, particularly when they precede visible statistical anomalies, are candidate "tipping points" for investigative focus.
-
-Applications include campaign finance pattern detection, electoral data structural analysis, and economic indicator regime classification.
+The Journalism profile reports ZDTP convergence and gateway magnitudes for public datasets such as campaign finance records. Since profile 3.0.0 it gives no verdicts (`measured_only`): no journalism-specific reading of these quantities (such as "tipping points") has passed a validation gate.
 
 ---
 
 ## Relationship to the Chavez Transform
 
-ZDTP and the Chavez Transform are complementary tools operating at different scales:
+Both have exact closed forms in the shipped tools, and neither uses the zero-divisor property:
 
-| | Chavez Transform | ZDTP |
+| | Chavez Transform (1D, as shipped) | ZDTP |
 |---|---|---|
-| **Input** | Single data point or function | 16D sedenion state |
-| **Output** | Structural content of one input | Convergence score across six pathways |
-| **Question answered** | Does this input carry hidden structure? | Is this structure gateway-independent? |
-| **Dimension** | 16D | 16D → 256D |
-| **Primary use** | Per-point structural analysis | Global structural coherence |
+| **Input** | A numerical series | 16D sedenion state |
+| **Output** | Center-weighted sum of the series | Six magnitudes and a convergence score |
+| **Closed form** | $\sum_i \text{data}_i w_i$ ([chavez_transform.md](./chavez_transform.md)) | $\sqrt{\|x\|^2 + 64x_0^2 + 16s_k^2}$ ([ZDTP_CLOSED_FORM.md](./ZDTP_CLOSED_FORM.md)) |
+| **Status** | Experimental measurement | Experimental measurement |
 
-The typical workflow: apply the Chavez Transform to identify which inputs carry structural content, then transmit high-scoring inputs through ZDTP to determine whether that structure is a genuine structural invariant (gateway-independent) or an artifact of a particular algebraic orientation.
+Earlier versions of this page proposed using the Chavez Transform to find inputs with "structural content" and ZDTP to test whether that structure is gateway-independent. Neither step has been validated, so that workflow is withdrawn.
 
 ---
 

@@ -31,14 +31,9 @@ GET /
 GET /health
 ```
 
-#### User Signup
-```
-POST /signup
-{
-  "email": "user@example.com",
-  "name": "User Name"
-}
-```
+#### Signup
+Every plan is paid: `GET /create-checkout-session?tier=<tier>` starts Stripe Checkout; the
+webhook provisions the user and `/success` shows the API key once.
 
 #### Validate API Key
 ```
@@ -60,8 +55,10 @@ POST /log-usage
 
 #### Get Usage Stats
 ```
-GET /usage/{api_key}
+GET /usage
+X-API-Key: cail_...
 ```
+The key goes in the header, never the URL.
 
 ## Local Development
 

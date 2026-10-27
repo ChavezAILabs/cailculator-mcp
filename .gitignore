@@ -103,3 +103,15 @@ scripts/setup_*.py
 
 # Local investigative notes (PII) 
 docs/devnotes/
+
+# Release stamp (written by scripts/release_gate.py during build)
+src/cailculator_mcp/_build_info.py
+
+# Golden suite, profile manifests and gate records must be committed
+!tests/golden/test_*.py
+!tests/golden/**/*.json
+!src/cailculator_mcp/profiles/*/manifest.json
+!src/cailculator_mcp/profiles/*/GATES.json
+
+# Generated charts (already-tracked ones stay tracked)
+assets/visualizations/

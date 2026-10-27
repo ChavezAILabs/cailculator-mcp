@@ -1,0 +1,30 @@
+# Never convert line endings in binary files. Without a rule, git guesses from content,
+# and with core.autocrlf=true a binary with no zero byte near the start (for example a
+# plain-text PDF) would be treated as text and corrupted on checkout.
+*.pdf     binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.webp    binary
+*.svgz    binary
+*.npz     binary
+*.npy     binary
+*.pkl     binary
+*.parquet binary
+*.db      binary
+*.sqlite  binary
+*.sqlite3 binary
+*.xlsx    binary
+*.docx    binary
+*.zip     binary
+*.7z      binary
+*.gz      binary
+*.whl     binary
+*.bundle  binary
+*.olean   binary
+*.ttf     binary
+*.otf     binary
+*.woff    binary
+*.woff2   binary

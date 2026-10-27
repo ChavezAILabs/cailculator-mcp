@@ -1,0 +1,34 @@
+{
+  "id": "journalism_null_constant",
+  "tool": "analyze_dataset",
+  "args": {
+    "data": {
+      "$data": "null_constant.json"
+    },
+    "profile": "journalism"
+  },
+  "verification": "recorded",
+  "source": "null control (handoff 3B)",
+  "notes": "A null must never produce a positive structural finding.",
+  "profile": "journalism",
+  "null_control": true,
+  "expected_structural_findings": [],
+  "record_keys": [
+    "success",
+    "regime.classification",
+    "regime.stability_level",
+    "regime.convergence_score"
+  ],
+  "expected": {
+    "success": true,
+    "regime": {
+      "classification": "not_assessed",
+      "stability_level": "not_assessed",
+      "convergence_score": 0.5848
+    }
+  },
+  "expected_input_hash": "sha256:fe234c6f15d6d8008198c146896bff89b899223e277933c286c6703429356b3e",
+  "tolerance": {
+    "regime.convergence_score": 5.848e-10
+  }
+}

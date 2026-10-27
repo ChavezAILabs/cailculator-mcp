@@ -1,11 +1,24 @@
 {
   "name": "journalism",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "scope": "Investigative Reporting & Data Journalism",
-  "categories": ["Politics", "Public Health", "Poverty"],
-  "used_theorems": ["ChavezTransform_genuine", "BilateralCollapse"],
-  "empirical_dependencies": [
-    {"claim": "Tipping Points precede structural collapse", "reference": "30+ years reporting expertise"}
+  "categories": [
+    "Politics",
+    "Public Health",
+    "Poverty"
   ],
-  "tier": "Official"
+  "used_theorems": [
+    "ChavezTransform_genuine",
+    "BilateralCollapse"
+  ],
+  "empirical_dependencies": [],
+  "tier": "Official",
+  "documented_uses": [
+    "analyze_dataset",
+    "zdtp_transmit"
+  ],
+  "output_policy": {
+    "verdicts": "measured_only",
+    "reason": "No journalism-specific interpretation has passed a validation gate; outputs report measured quantities only."
+  }
 }

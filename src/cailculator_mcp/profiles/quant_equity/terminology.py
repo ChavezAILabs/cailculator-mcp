@@ -9,39 +9,19 @@ Supports three levels: technical, standard, simple.
 from typing import Dict, Any
 
 # Core terminology mappings - Finance Domain
-# Evidence references (AIEX-###) represent the documented link between math and finance.
+# Profile 3.0.0: algebraic quantities are no longer translated into market language.
+# Removed: bilateral_zeros ("Volatility regime shift signals"), zero_divisor ("Structural
+# weakness point"), conjugation_symmetry ("Mean reversion strength", cited AIEX-231 on
+# prime spectra), dimensional_persistence ("Patterns that work on multiple chart
+# timeframes") and transform_convergence ("Analysis confidence score"). No test supports
+# any of these readings; see CHANGELOG. Standard technical-indicator terms remain.
+# chavez_transform is described as what it computes (2.2.0 decision 1); its key is no
+# longer renamed to pattern_analysis / pattern_finder.
 FINANCIAL_GLOSSARY = {
-    "conjugation_symmetry": {
-        "technical": "Conjugation symmetry detection (eigenvalue stability in hypercomplex space)",
-        "standard": "Mean reversion strength indicator",
-        "simple": "How strongly price returns to average",
-        "evidence": "AIEX-231 (Mirror symmetry in prime spectra)"
-    },
-    "bilateral_zeros": {
-        "technical": "Bilateral zero divisor detection in sedenion/pathion algebras",
-        "standard": "Volatility regime shift signals",
-        "simple": "Major market mood changes",
-        "evidence": "AIEX-501 (Zero divisors as structural bifurcation points)"
-    },
-    "dimensional_persistence": {
-        "technical": "Cross-dimensional pattern stability (16D→32D→64D Cayley-Dickson)",
-        "standard": "Pattern stability across timeframes",
-        "simple": "Patterns that work on multiple chart timeframes (daily, weekly, monthly)"
-    },
-    "transform_convergence": {
-        "technical": "Chavez Transform L² convergence with alpha-parametrized damping",
-        "standard": "Analysis confidence score",
-        "simple": "How sure we are about the results"
-    },
     "chavez_transform": {
-        "technical": "Zero-divisor weighted integral transform in pathion space",
-        "standard": "Pattern-weighted data analysis",
-        "simple": "Smart way to find hidden patterns in data"
-    },
-    "zero_divisor": {
-        "technical": "Non-zero elements P, Q where P×Q = 0 in non-associative algebra",
-        "standard": "Structural weakness point in data",
-        "simple": "Special relationship where things cancel out"
+        "technical": "1D Chavez Transform; closed form: fixed center-weighted sum of the series",
+        "standard": "Center-weighted sum of the series (experimental)",
+        "simple": "A weighted total of the data, with the middle counting most"
     },
     "bullish": {
         "technical": "Positive momentum with directional bias > 0",
@@ -73,20 +53,8 @@ FINANCIAL_GLOSSARY = {
 FIELD_MAPPINGS = {
     "technical": {},
     "standard": {
-        "conjugation_symmetry": "mean_reversion",
-        "bilateral_zeros": "regime_shifts",
-        "dimensional_persistence": "timeframe_stability",
-        "transform_convergence": "confidence_score",
-        "chavez_transform": "pattern_analysis",
-        "zero_divisor": "structural_weakness",
     },
     "simple": {
-        "conjugation_symmetry": "return_to_average",
-        "bilateral_zeros": "mood_changes",
-        "dimensional_persistence": "pattern_consistency",
-        "transform_convergence": "certainty",
-        "chavez_transform": "pattern_finder",
-        "zero_divisor": "cancellation_point",
     }
 }
 

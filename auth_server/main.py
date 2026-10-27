@@ -3,9 +3,9 @@ CAILculator Auth Server - FastAPI Backend for Railway
 Handles API key validation and usage tracking
 """
 
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends, Request, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
@@ -13,13 +13,11 @@ from typing import Optional
 import os
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from pathlib import Path
 import stripe
 import secrets
 import hashlib
-import requests
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
 
 from database import (
     get_db,
@@ -28,8 +26,8 @@ from database import (
     APIKey,
     UsageLog,
     SubscriptionTier,
-    SignupAttempt,
     ProcessedStripeEvent,
+    CheckoutKeyReveal,
 )
 
 app = FastAPI(
@@ -52,8 +50,10 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
-# Stripe Price IDs (LIVE MODE - Production)
-STRIPE_PRICES = {
+# Stripe Price IDs. Each can be overridden by STRIPE_PRICE_ID_<TIER> (e.g.
+# STRIPE_PRICE_ID_INDIVIDUAL), so a test-mode or staging deploy can use test-mode prices
+# without a code change. The defaults are the LIVE-mode IDs used in production.
+_LIVE_PRICES = {
     "individual": "price_1Tdyrt2NNm10BnLCMe5wP9XN",    # $50/month - 25,000 requests
     "journalist": "price_1Tdyl42NNm10BnLCRgqZQnUF",    # $75/month - 50,000 requests
     "academic": "price_1TdyvL2NNm10BnLC5704Cv5U",      # $100/month - 75,000 requests
@@ -63,6 +63,37 @@ STRIPE_PRICES = {
     "quant_professional": "price_1SXDc82NNm10BnLC36hwqnaA",  # $1,499/month - 500,000 requests
     "quant_elite": "price_1SQGox2NNm10BnLCcROJSo91"          # $3,499/month - Unlimited
     # Enterprise and Quant Enterprise are custom pricing (contact sales)
+}
+STRIPE_PRICES = {tier: os.getenv(f"STRIPE_PRICE_ID_{tier.upper()}", price)
+                 for tier, price in _LIVE_PRICES.items()}
+if (os.getenv("STRIPE_SECRET_KEY") or "").startswith("sk_test_") and STRIPE_PRICES == _LIVE_PRICES:
+    print("WARNING: Stripe test key with live-mode price IDs; set STRIPE_PRICE_ID_<TIER> for test mode")
+if not (STRIPE_WEBHOOK_SECRET or "").strip():
+    print("WARNING: STRIPE_WEBHOOK_SECRET not set; /webhook/stripe will refuse every event (503)")
+PRICE_TO_TIER = {price: tier for tier, price in STRIPE_PRICES.items()}
+
+# Admin endpoints (/admin/...) require this token in the X-Admin-Token header.
+# Unset, empty or whitespace-only = admin endpoints disabled (503). Surrounding spaces are ignored.
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
+
+# Domain profiles included in each plan. Must match PLAN_PROFILES in
+# src/cailculator_mcp/plans.py (checked by tests/golden/test_access.py).
+PLAN_PROFILES = {
+    "individual": ["general_data", "developer_v1"],
+    "journalist": ["journalism", "general_data", "developer_v1"],
+    "academic": ["general_data", "developer_v1"],
+    "quant_explorer": ["quant_equity", "general_data", "developer_v1"],
+    "quant_professional": ["quant_equity", "general_data", "developer_v1"],
+    "quant_elite": ["quant_equity", "general_data", "developer_v1"],
+    "commercial": ["general_data", "journalism", "quant_equity", "developer_v1"],
+    "enterprise": ["general_data", "journalism", "quant_equity", "developer_v1"],
+}
+
+PROFILE_DESCRIPTIONS = {
+    "general_data": "General Data - general-purpose numerical structure analysis",
+    "journalism": "Journalism - measured structural quantities for public-records data",
+    "quant_equity": "Quant Equity - market regime analysis from price / OHLCV data",
+    "developer_v1": "Developer - template for building a custom profile",
 }
 
 # Monthly request limits by tier
@@ -78,25 +109,6 @@ TIER_LIMITS = {
     "quant_elite": -1  # Unlimited
 }
 
-# SendGrid configuration
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "iknowpi@gmail.com")
-
-# Auto-approved countries (US, Canada, EU, UK, Australia, Japan, New Zealand)
-AUTO_APPROVED_COUNTRIES = {
-    "US", "CA",  # North America
-    "GB", "IE",  # UK & Ireland
-    "AU", "NZ",  # Oceania
-    "JP", "KR", "SG",  # Asia (friendly)
-    # EU countries
-    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
-    "DE", "GR", "HU", "IT", "LV", "LT", "LU", "MT", "NL", "PL",
-    "PT", "RO", "SK", "SI", "ES", "SE", "NO", "CH", "IS"
-}
-
-# IP rate limiting: max signups per IP per day
-MAX_SIGNUPS_PER_IP_PER_DAY = 3
-
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -109,17 +121,6 @@ app.add_middleware(
 # =============================================================================
 # REQUEST/RESPONSE MODELS
 # =============================================================================
-
-class SignupRequest(BaseModel):
-    email: EmailStr
-    name: Optional[str] = None
-
-class SignupResponse(BaseModel):
-    user_id: int
-    email: str
-    api_key: str
-    tier: str
-    message: str
 
 class ValidateRequest(BaseModel):
     api_key: str
@@ -140,193 +141,6 @@ class UsageRequest(BaseModel):
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
-
-def get_client_ip(request: Request) -> str:
-    """Get client IP address from request"""
-    # Check for Railway/proxy forwarded IP first
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-
-    real_ip = request.headers.get("X-Real-IP")
-    if real_ip:
-        return real_ip
-
-    # Fallback to direct connection
-    if request.client:
-        return request.client.host
-
-    return "unknown"
-
-def get_country_from_ip(ip_address: str) -> Optional[str]:
-    """
-    Get country code from IP address using free ipapi.co service
-    Returns 2-letter ISO country code or None
-    """
-    if ip_address == "unknown" or ip_address.startswith("127.") or ip_address.startswith("192.168."):
-        return "US"  # Default for localhost/development
-
-    try:
-        response = requests.get(f"https://ipapi.co/{ip_address}/country/", timeout=2)
-        if response.status_code == 200:
-            country_code = response.text.strip()
-            return country_code if len(country_code) == 2 else None
-    except:
-        pass
-
-    return None
-
-def check_ip_rate_limit(ip_address: str, db: Session) -> tuple[bool, int]:
-    """
-    Check if IP has exceeded signup rate limit
-    Returns: (is_allowed, signup_count_today)
-    """
-    # Count signups from this IP in last 24 hours
-    twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
-
-    signup_count = db.query(SignupAttempt).filter(
-        SignupAttempt.ip_address == ip_address,
-        SignupAttempt.timestamp >= twenty_four_hours_ago
-    ).count()
-
-    is_allowed = signup_count < MAX_SIGNUPS_PER_IP_PER_DAY
-    return is_allowed, signup_count
-
-def send_verification_email(email: str, verification_token: str, base_url: str) -> bool:
-    """
-    Send email verification link using SendGrid
-    Returns True if successful, False otherwise
-    """
-    if not SENDGRID_API_KEY:
-        print("WARNING: SENDGRID_API_KEY not set, skipping email")
-        return False
-
-    verification_url = f"{base_url}/verify-email?token={verification_token}"
-
-    message = Mail(
-        from_email=SENDGRID_FROM_EMAIL,
-        to_emails=email,
-        subject="Verify your CAILculator MCP account",
-        html_content=f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #667eea;">CAILculator MCP</h1>
-                    <p style="color: #666; font-style: italic;">"Better math, less suffering"</p>
-                </div>
-
-                <h2>Welcome to CAILculator MCP!</h2>
-
-                <p>Thank you for signing up. You're one step away from accessing high-dimensional mathematical analysis tools.</p>
-
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="{verification_url}"
-                       style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                              color: white;
-                              padding: 15px 40px;
-                              text-decoration: none;
-                              border-radius: 5px;
-                              display: inline-block;
-                              font-weight: bold;">
-                        Verify Email Address
-                    </a>
-                </div>
-
-                <p style="color: #666; font-size: 0.9em;">
-                    This link will expire in 24 hours. If you didn't create this account, you can safely ignore this email.
-                </p>
-
-                <p style="color: #666; font-size: 0.9em; margin-top: 30px;">
-                    Or copy and paste this URL into your browser:<br>
-                    <a href="{verification_url}" style="color: #667eea;">{verification_url}</a>
-                </p>
-
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-
-                <p style="color: #999; font-size: 0.85em; text-align: center;">
-                    <strong>Chavez AI Labs</strong><br>
-                    Research tools for high-dimensional mathematics<br>
-                    <a href="mailto:iknowpi@gmail.com" style="color: #667eea;">iknowpi@gmail.com</a>
-                </p>
-            </div>
-        </body>
-        </html>
-        """
-    )
-
-    try:
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
-        print(f"Verification email sent to {email}: Status {response.status_code}")
-        return response.status_code in [200, 202]
-    except Exception as e:
-        print(f"Failed to send email to {email}: {str(e)}")
-        return False
-
-def send_manual_approval_pending_email(email: str, country_code: str) -> bool:
-    """
-    Notify user that their signup requires manual approval
-    Returns True if successful, False otherwise
-    """
-    if not SENDGRID_API_KEY:
-        print("WARNING: SENDGRID_API_KEY not set, skipping email")
-        return False
-
-    message = Mail(
-        from_email=SENDGRID_FROM_EMAIL,
-        to_emails=email,
-        subject="CAILculator MCP - Manual Approval Required",
-        html_content=f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="color: #667eea;">CAILculator MCP</h1>
-                    <p style="color: #666; font-style: italic;">"Better math, less suffering"</p>
-                </div>
-
-                <h2>Email Verified - Approval Pending</h2>
-
-                <p>Thank you for verifying your email address! Your signup from <strong>{country_code or 'your region'}</strong> requires manual approval as part of our security process.</p>
-
-                <div style="background-color: #f7fafc; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;">
-                    <p style="margin: 0; font-weight: bold; color: #667eea;">What happens next?</p>
-                    <ul style="margin: 10px 0; padding-left: 20px;">
-                        <li>Our team will review your signup within 24 hours</li>
-                        <li>You'll receive your API key via email once approved</li>
-                        <li>No action required from you - just sit tight!</li>
-                    </ul>
-                </div>
-
-                <div style="background-color: #fffaf0; border-left: 4px solid #ed8936; padding: 15px; margin: 20px 0;">
-                    <p style="margin: 0; color: #7c2d12;"><strong>Why manual approval?</strong></p>
-                    <p style="margin: 10px 0 0 0; color: #7c2d12;">We review signups from certain regions to prevent abuse and maintain service quality for legitimate researchers and developers.</p>
-                </div>
-
-                <p>We appreciate your patience and look forward to having you explore high-dimensional mathematics with CAILculator MCP!</p>
-
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-
-                <p style="color: #999; font-size: 0.85em; text-align: center;">
-                    <strong>Chavez AI Labs</strong><br>
-                    Research tools for high-dimensional mathematics<br>
-                    Questions? Reply to this email or contact <a href="mailto:iknowpi@gmail.com" style="color: #667eea;">iknowpi@gmail.com</a>
-                </p>
-            </div>
-        </body>
-        </html>
-        """
-    )
-
-    try:
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
-        print(f"Manual approval notification sent to {email}: Status {response.status_code}")
-        return response.status_code in [200, 202]
-    except Exception as e:
-        print(f"Failed to send manual approval email to {email}: {str(e)}")
-        return False
 
 def check_rate_limit(api_key: str, db: Session) -> tuple[bool, int, int]:
     """
@@ -362,99 +176,6 @@ def check_rate_limit(api_key: str, db: Session) -> tuple[bool, int, int]:
 
     return is_allowed, current_usage, limit
 
-def send_api_key_email(email: str, api_key: str, tier: str, customer_name: str = None):
-    """
-    Send API key to customer via email using SendGrid
-    """
-    if not SENDGRID_API_KEY:
-        print(f"⚠️  SendGrid not configured - API key: {api_key}")
-        return
-
-    # Friendly tier names
-    tier_names = {
-        "individual": "Individual",
-        "journalist": "Journalist",
-        "academic": "Academic",
-        "commercial": "Commercial",
-        "enterprise": "Enterprise",
-        "quant_explorer": "Quant Explorer",
-        "quant_professional": "Quant Professional",
-        "quant_elite": "Quant Elite"
-    }
-    tier_display = tier_names.get(tier, tier.replace('_', ' ').title())
-
-    # Email body
-    body = f"""
-Hello{f' {customer_name}' if customer_name else ''},
-
-Thank you for subscribing to CAILculator {tier_display}!
-
-Your API key is ready:
-
-    {api_key}
-
-To get started:
-
-1. Install Claude Desktop (if you haven't already)
-2. Add CAILculator to your MCP configuration:
-
-   Windows: %APPDATA%\\Claude\\claude_desktop_config.json
-   Mac/Linux: ~/Library/Application Support/Claude/claude_desktop_config.json
-
-3. Add this configuration:
-
-{{
-  "mcpServers": {{
-    "cailculator-mcp": {{
-      "command": "uvx",
-      "args": ["cailculator-mcp"],
-      "env": {{
-        "CAILCULATOR_API_KEY": "{api_key}"
-      }}
-    }}
-  }}
-}}
-
-4. Restart Claude Desktop
-
-Documentation: https://github.com/ChavezAILabs/cailculator-mcp
-Support: iknowpi@gmail.com
-
-Features included in your {tier_display} plan:
-- All 5 MCP tools (compute, transform, patterns, analysis, visualizations)
-- Dual framework support (Cayley-Dickson + Clifford)
-- 16D-256D dimensional range
-- Chavez Transform data analysis
-- Canonical Six pattern detection
-
-Better math, less suffering.
-
-— Chavez AI Labs
-
----
-Need help? Reply to this email or reach out at iknowpi@gmail.com
-    """.strip()
-
-    try:
-        message = Mail(
-            from_email=SENDGRID_FROM_EMAIL,
-            to_emails=email,
-            subject="Your CAILculator API Key",
-            plain_text_content=body
-        )
-
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
-
-        if response.status_code in [200, 201, 202]:
-            print(f"✅ Sent API key email to {email}")
-        else:
-            print(f"⚠️  SendGrid returned status {response.status_code}")
-
-    except Exception as e:
-        print(f"❌ Failed to send email to {email}: {e}")
-        print(f"   API key (manual delivery needed): {api_key}")
-
 # =============================================================================
 # API ENDPOINTS
 # =============================================================================
@@ -487,202 +208,9 @@ async def health_check(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Database error: {str(e)}")
 
-@app.post("/migrate-db")
-async def migrate_database(db: Session = Depends(get_db)):
-    """
-    One-time database migration to add rate limiting columns
-    Safe to run multiple times (uses IF NOT EXISTS)
-    """
-    from sqlalchemy import text
-
-    migrations = [
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS request_count_current_period INTEGER DEFAULT 0 NOT NULL",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS period_start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS period_end_date TIMESTAMP",
-        # Add new enum values to PostgreSQL enum type
-        "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'individual'",
-        "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'journalist'",
-        "ALTER TYPE subscriptiontier ADD VALUE IF NOT EXISTS 'commercial'",
-        # Update old enum values to new ones (cast to text for comparison)
-        "UPDATE users SET tier = 'individual' WHERE tier::text = 'free'",
-        "UPDATE users SET tier = 'individual' WHERE tier::text = 'indie'",
-        "UPDATE users SET tier = 'commercial' WHERE tier::text = 'professional'"
-    ]
-
-    results = []
-    for migration in migrations:
-        try:
-            db.execute(text(migration))
-            db.commit()
-            results.append({"sql": migration, "status": "success"})
-        except Exception as e:
-            db.rollback()
-            results.append({"sql": migration, "status": "failed", "error": str(e)})
-
-    return {
-        "message": "Migration completed",
-        "migrations": results
-    }
-
-@app.post("/signup")
-async def signup(signup_request: SignupRequest, request: Request, db: Session = Depends(get_db)):
-    """
-    Create new user account and send verification email
-    API key generated after email verification
-    """
-    # Get client IP
-    client_ip = get_client_ip(request)
-
-    # Check IP rate limit
-    is_allowed, signup_count = check_ip_rate_limit(client_ip, db)
-    if not is_allowed:
-        raise HTTPException(
-            status_code=429,
-            detail=f"Too many signup attempts from your IP address. Limit: {MAX_SIGNUPS_PER_IP_PER_DAY} per day."
-        )
-
-    # Check if user already exists
-    existing_user = db.query(User).filter(User.email == signup_request.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    # Get country from IP
-    country_code = get_country_from_ip(client_ip)
-
-    # Check if auto-approved or requires manual approval
-    requires_manual = (country_code not in AUTO_APPROVED_COUNTRIES) if country_code else True
-
-    # Generate verification token
-    verification_token = secrets.token_urlsafe(32)
-    token_expires = datetime.utcnow() + timedelta(hours=24)
-
-    # Create user (WITHOUT API key yet - will be upgraded to paid tier via Stripe webhook)
-    user = User(
-        email=signup_request.email,
-        name=signup_request.name or signup_request.email.split('@')[0],
-        tier=SubscriptionTier.INDIVIDUAL,  # Default tier (will be updated by Stripe webhook)
-        email_verified=0,
-        verification_token=verification_token,
-        verification_token_expires=token_expires,
-        country_code=country_code,
-        signup_ip=client_ip,
-        requires_manual_approval=1 if requires_manual else 0
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    # Log signup attempt
-    signup_attempt = SignupAttempt(
-        ip_address=client_ip,
-        success=1
-    )
-    db.add(signup_attempt)
-    db.commit()
-
-    # Get base URL
-    base_url = os.getenv("RAILWAY_PUBLIC_DOMAIN", request.base_url)
-    if isinstance(base_url, str) and not base_url.startswith("http"):
-        base_url = f"https://{base_url}"
-    else:
-        base_url = str(base_url).rstrip("/")
-
-    # Send verification email
-    email_sent = send_verification_email(signup_request.email, verification_token, base_url)
-
-    if not email_sent:
-        # Email failed but user created - they can resend later
-        print(f"WARNING: Failed to send verification email to {signup_request.email}")
-
-    response_message = "Account created! Please check your email to verify your account."
-    if requires_manual:
-        response_message += f" Note: Signups from {country_code or 'your region'} require manual approval. You will receive your API key within 24 hours of approval."
-
-    return {
-        "message": response_message,
-        "email": signup_request.email,
-        "requires_manual_approval": requires_manual,
-        "email_sent": email_sent
-    }
-
-# Free tier removed - all tiers now require payment
-# @app.get("/signup-free", response_class=HTMLResponse)
-# async def signup_free_page(request: Request):
-#     """
-#     Free tier signup page (simple email form) - DEPRECATED
-#     """
-#     return templates.TemplateResponse(request=request, name="signup_free.html")
-
-@app.get("/verify-email", response_class=HTMLResponse)
-async def verify_email(request: Request, token: str, db: Session = Depends(get_db)):
-    """
-    Verify email address and generate API key
-    """
-    # Find user by verification token
-    user = db.query(User).filter(User.verification_token == token).first()
-
-    if not user:
-        return templates.TemplateResponse(request=request, name="verification_result.html", context={
-            "success": False,
-            "message": "Invalid verification link. The token may have expired or already been used."
-        })
-
-    # Check if token expired
-    if user.verification_token_expires and user.verification_token_expires < datetime.utcnow():
-        return templates.TemplateResponse(request=request, name="verification_result.html", context={
-            "success": False,
-            "message": "Verification link has expired. Please sign up again."
-        })
-
-    # Check if already verified
-    if user.email_verified == 1:
-        # Find existing API key
-        existing_key = db.query(APIKey).filter(APIKey.user_id == user.id).first()
-        if existing_key:
-            return templates.TemplateResponse(request=request, name="verification_result.html", context={
-                "success": True,
-                "message": "Email already verified. Your API key was sent previously.",
-                "already_verified": True
-            })
-
-    # Check if requires manual approval
-    if user.requires_manual_approval == 1:
-        user.email_verified = 1
-        user.verification_token = None
-        db.commit()
-
-        # Send manual approval notification email
-        send_manual_approval_pending_email(user.email, user.country_code)
-
-        return templates.TemplateResponse(request=request, name="verification_result.html", context={
-            "success": True,
-            "message": f"Email verified! Your signup from {user.country_code or 'your region'} requires manual approval. You will receive your API key within 24 hours.",
-            "requires_approval": True
-        })
-
-    # Generate API key
-    api_key_plain = f"cail_{secrets.token_urlsafe(32)}"
-    api_key_hash = hashlib.sha256(api_key_plain.encode()).hexdigest()
-
-    # Mark as verified
-    user.email_verified = 1
-    user.verification_token = None
-
-    # Create API key record
-    api_key_record = APIKey(
-        user_id=user.id,
-        key_hash=api_key_hash
-    )
-    db.add(api_key_record)
-    db.commit()
-
-    return templates.TemplateResponse(request=request, name="verification_result.html", context={
-        "success": True,
-        "api_key": api_key_plain,
-        "email": user.email,
-        "tier": user.tier.value,
-        "message": "Email verified successfully! Your API key is ready."
-    })
+# POST /migrate-db was removed on 2026-10-14: it was unauthenticated and wrote to the
+# production database. Schema changes run at startup (see startup()); one-off migrations
+# run by hand with migrate_db.py.
 
 @app.post("/validate", response_model=ValidateResponse)
 async def validate(request: ValidateRequest, db: Session = Depends(get_db)):
@@ -772,21 +300,23 @@ async def log_usage(request: UsageRequest, db: Session = Depends(get_db)):
 
     return {"status": "logged"}
 
-@app.get("/usage/{api_key}")
-async def get_usage(api_key: str, db: Session = Depends(get_db)):
+@app.get("/usage")
+async def get_usage(x_api_key: Optional[str] = Header(None), db: Session = Depends(get_db)):
     """
-    Get usage statistics for an API key
+    Get usage statistics for the API key in the X-API-Key header.
+    The key is never taken from the URL, where it would reach access logs and proxies
+    (until 2026-10-22 this was GET /usage/{api_key}).
     """
-    # Hash the provided key
-    import hashlib
+    api_key = (x_api_key or "").strip()
+    if not api_key:
+        raise HTTPException(status_code=401, detail="Missing X-API-Key header")
     key_hash = hashlib.sha256(api_key.encode()).hexdigest()
 
     # Find API key
     key_record = db.query(APIKey).filter(APIKey.key_hash == key_hash).first()
-    if not key_record:
+    user = key_record and db.query(User).filter(User.id == key_record.user_id).first()
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid API key")
-
-    user = db.query(User).filter(User.id == key_record.user_id).first()
 
     # Count usage in last 30 days
     from datetime import timedelta
@@ -798,14 +328,14 @@ async def get_usage(api_key: str, db: Session = Depends(get_db)):
 
     limit = TIER_LIMITS.get(user.tier.value, 100)
 
-    return {
+    return JSONResponse({
         "user_id": user.id,
         "email": user.email,
         "tier": user.tier.value,
         "usage_30_days": usage_count,
         "limit": limit if limit != -1 else "unlimited",
         "remaining": (limit - usage_count) if limit != -1 else "unlimited"
-    }
+    }, headers=NO_STORE)
 
 # =============================================================================
 # STARTUP/SHUTDOWN
@@ -830,6 +360,7 @@ async def startup():
                     conn.execute(text("DROP TABLE IF EXISTS api_keys CASCADE"))
                     conn.execute(text("DROP TABLE IF EXISTS usage_logs CASCADE"))
                     conn.execute(text("DROP TABLE IF EXISTS signup_attempts CASCADE"))
+                    conn.execute(text("DROP TABLE IF EXISTS checkout_key_reveals CASCADE"))
                     conn.execute(text("DROP TYPE IF EXISTS subscriptiontier CASCADE"))
                     conn.commit()
                     print("✓ Database reset complete - tables will be recreated")
@@ -924,6 +455,133 @@ def _mark_event_processed(event_id: str, event_type: str, db: Session) -> None:
         db.rollback()
 
 # =============================================================================
+# API KEY ISSUE AND PROVISIONING
+# Keys are shown once and never stored or logged: api_keys holds only the SHA-256.
+# =============================================================================
+
+NO_STORE = {"Cache-Control": "no-store", "Pragma": "no-cache", "Referrer-Policy": "no-referrer"}
+
+def _new_api_key(user: User, db: Session, commit: bool = True) -> str:
+    """Create an API key for user; store its hash; return the plaintext (caller shows it once)."""
+    tier = user.tier.value if hasattr(user.tier, "value") else str(user.tier)
+    api_key_plain = f"cail_{tier}_{secrets.token_urlsafe(20)}"
+    db.add(APIKey(user_id=user.id, key_hash=hashlib.sha256(api_key_plain.encode()).hexdigest()))
+    if commit:
+        db.commit()
+    return api_key_plain
+
+def _tier_for_subscription(subscription_id: Optional[str]) -> str:
+    """Resolve the plan tier from the subscription's price; 'individual' if unknown."""
+    if not subscription_id:
+        return 'individual'
+    try:
+        subscription = stripe.Subscription.retrieve(subscription_id)
+        price_id = subscription['items']['data'][0]['price']['id']
+        return PRICE_TO_TIER.get(price_id, 'individual')
+    except Exception as e:
+        print(f"❌ Error resolving tier: {e}")
+        return 'individual'
+
+def _checkout_customer(session) -> tuple:
+    """(email, name, subscription_id) from a Checkout Session."""
+    customer_details = safe_get(session, 'customer_details', None)
+    email = safe_get(session, 'customer_email', None) or (
+        safe_get(customer_details, 'email', None) if customer_details else None
+    )
+    name = safe_get(customer_details, 'name', None) if customer_details else None
+    return email, name, safe_get(session, 'subscription', None)
+
+def _provision_user(db: Session, email: str, name: Optional[str], tier: str,
+                    subscription_id: Optional[str]) -> User:
+    """Create or update the subscriber's user row (no key). Safe to call twice for one checkout."""
+    user = db.query(User).filter(User.email == email).first()
+    if user:
+        user.tier = SubscriptionTier(tier)
+        user.stripe_subscription_id = subscription_id
+        user.subscription_status = 'active'
+        user.email_verified = 1
+        db.commit()
+        return user
+    user = User(
+        email=email,
+        name=name or email.split('@')[0],
+        tier=SubscriptionTier(tier),
+        email_verified=1,
+        stripe_subscription_id=subscription_id,
+        subscription_status='active',
+    )
+    db.add(user)
+    try:
+        db.commit()
+    except IntegrityError:
+        # The webhook and the success page can race to create the same user.
+        db.rollback()
+        user = db.query(User).filter(User.email == email).first()
+        return _provision_user(db, email, name, tier, subscription_id)
+    db.refresh(user)
+    return user
+
+# =============================================================================
+# ADMIN (X-Admin-Token)
+# =============================================================================
+
+class AdminIssueRequest(BaseModel):
+    email: EmailStr
+    rotate: bool = False  # True: revoke the user's existing keys first
+
+def _require_admin(request: Request) -> None:
+    token = (ADMIN_TOKEN or "").strip()
+    if not token:
+        raise HTTPException(status_code=503, detail="Admin endpoints are disabled")
+    supplied = request.headers.get("x-admin-token", "")
+    if not secrets.compare_digest(supplied.encode(), token.encode()):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+@app.post("/admin/keys/issue")
+async def admin_issue_key(body: AdminIssueRequest, request: Request, db: Session = Depends(get_db)):
+    """Issue a key for an existing user (rotate=true revokes their other keys). Returned once."""
+    _require_admin(request)
+    user = db.query(User).filter(User.email == body.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="No user with that email")
+    revoked = 0
+    if body.rotate:
+        revoked = db.query(APIKey).filter(APIKey.user_id == user.id).delete()
+    api_key_plain = _new_api_key(user, db)
+    print(f"🔑 Admin issued a key for {user.email} (rotate={body.rotate}, revoked={revoked})")
+    return JSONResponse(
+        {"email": user.email, "tier": user.tier.value, "api_key": api_key_plain, "revoked": revoked},
+        headers=NO_STORE,
+    )
+
+@app.get("/admin/keys")
+async def admin_list_keys(request: Request, db: Session = Depends(get_db)):
+    """List every key: id, owner, dates and the first 12 hex digits of its hash (never the key)."""
+    _require_admin(request)
+    rows = db.query(APIKey, User).join(User, APIKey.user_id == User.id).order_by(APIKey.id).all()
+    return JSONResponse({"keys": [
+        {
+            "id": k.id, "user_id": u.id, "email": u.email, "tier": u.tier.value,
+            "subscription_status": u.subscription_status,
+            "created_at": k.created_at.isoformat() if k.created_at else None,
+            "last_used_at": k.last_used_at.isoformat() if k.last_used_at else None,
+            "hash_prefix": k.key_hash[:12],
+        }
+        for k, u in rows
+    ]}, headers=NO_STORE)
+
+@app.delete("/admin/keys/{key_id}")
+async def admin_revoke_key(key_id: int, request: Request, db: Session = Depends(get_db)):
+    """Revoke (delete) one key by its id."""
+    _require_admin(request)
+    deleted = db.query(APIKey).filter(APIKey.id == key_id).delete()
+    db.commit()
+    if not deleted:
+        raise HTTPException(status_code=404, detail="No key with that id")
+    print(f"🔑 Admin revoked key id {key_id}")
+    return {"revoked": key_id}
+
+# =============================================================================
 # STRIPE CHECKOUT
 # =============================================================================
 
@@ -963,42 +621,69 @@ async def create_checkout_session(tier: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/success")
-async def success(request: Request, session_id: str):
+async def success(request: Request, session_id: str, db: Session = Depends(get_db)):
     """
-    Success page after checkout
+    Success page after checkout. Shows the new API key exactly once.
+
+    The key is created here, not in the webhook, so its plaintext never has to be stored
+    or logged: it goes straight to this response, and only its hash is kept. A
+    CheckoutKeyReveal row (unique per checkout session) makes the reveal one-time; a reload
+    or second visit shows no key.
     """
+    def page(**context):
+        return templates.TemplateResponse(request=request, name="success.html",
+                                          context=context, headers=NO_STORE)
+
     try:
         session = stripe.checkout.Session.retrieve(session_id)
-
-        return templates.TemplateResponse(request=request, name="success.html", context={
-            "session": session
-        })
     except Exception as e:
-        return templates.TemplateResponse(request=request, name="success.html", context={
-            "error": str(e)
-        })
+        print(f"❌ /success: could not retrieve session: {e}")
+        return page(error="We couldn't confirm this checkout. If you were charged, email paul@chavezailabs.com.")
+
+    payment_status = safe_get(session, 'payment_status', '') or ''
+    if safe_get(session, 'status', '') != 'complete' or payment_status not in ('paid', 'no_payment_required'):
+        return page(error="This checkout isn't complete yet. If you were charged, email paul@chavezailabs.com.")
+
+    if db.query(CheckoutKeyReveal).filter(CheckoutKeyReveal.session_id == session_id).first():
+        return page(already_revealed=True)
+
+    email, name, subscription_id = _checkout_customer(session)
+    if not email:
+        return page(error="This checkout has no email address. Please email paul@chavezailabs.com.")
+
+    user = _provision_user(db, email, name, _tier_for_subscription(subscription_id), subscription_id)
+    try:
+        # One transaction: the reveal row and the key commit together or not at all.
+        db.add(CheckoutKeyReveal(session_id=session_id, user_id=user.id))
+        api_key_plain = _new_api_key(user, db, commit=False)
+        db.commit()
+    except IntegrityError:
+        db.rollback()  # another request revealed this session's key first
+        return page(already_revealed=True)
+
+    print(f"🔑 Key revealed on success page for {email} (session {session_id})")
+    return page(api_key=api_key_plain, email=email)
 
 @app.post("/webhook/stripe")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     """
     Handle Stripe webhooks for subscription events.
     Handles both paid and $0 (comped) checkouts via payment_status check.
-    API keys are stored in DB; manual email delivery required.
+    The webhook provisions the user only; the API key is created and shown once on the
+    success page (/success), and never logged.
     """
+    # Fail closed: without a signing secret, anyone could post a forged event. 503 (not 400)
+    # so Stripe retries the event once the secret is configured.
+    secret = (STRIPE_WEBHOOK_SECRET or "").strip()
+    if not secret:
+        print("ERROR: STRIPE_WEBHOOK_SECRET not set; webhook refused (503)")
+        raise HTTPException(status_code=503, detail="Webhook not configured")
+
     payload = await request.body()
     sig_header = request.headers.get('stripe-signature')
 
     try:
-        if STRIPE_WEBHOOK_SECRET:
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, STRIPE_WEBHOOK_SECRET
-            )
-        else:
-            import json
-            event = stripe.Event.construct_from(
-                json.loads(payload.decode('utf-8')), stripe.api_key
-            )
-            print("WARNING: STRIPE_WEBHOOK_SECRET not set, webhook signature not verified")
+        event = stripe.Webhook.construct_event(payload, sig_header, secret)
     except ValueError as e:
         print(f"Invalid webhook payload: {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid payload")
@@ -1035,79 +720,27 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
                 _mark_event_processed(event_id, event_type, db)
                 return {"status": "skipped"}
 
-            customer_details = safe_get(session, 'customer_details', None)
-            customer_email = safe_get(session, 'customer_email', None) or (
-                safe_get(customer_details, 'email', None) if customer_details else None
-            )
-            customer_name = safe_get(customer_details, 'name', None) if customer_details else None
-            subscription_id = safe_get(session, 'subscription', None)
+            customer_email, customer_name, subscription_id = _checkout_customer(session)
             session_id = safe_get(session, 'id', None)
-
             print(f"   Customer     : {customer_email}")
             print(f"   payment_status: {payment_status}")
 
-            tier = 'individual'
-            if subscription_id:
-                try:
-                    subscription = stripe.Subscription.retrieve(subscription_id)
-                    price_id = subscription['items']['data'][0]['price']['id']
-                    price_to_tier = {
-                        "price_1Tdyrt2NNm10BnLCMe5wP9XN": "individual",
-                        "price_1Tdyl42NNm10BnLCRgqZQnUF": "journalist",
-                        "price_1TdyvL2NNm10BnLC5704Cv5U": "academic",
-                        "price_1TdyxN2NNm10BnLCI9XjeRNt": "commercial",
-                        "price_1SQGie2NNm10BnLCyraRcDSA": "quant_explorer",
-                        "price_1SXDc82NNm10BnLC36hwqnaA": "quant_professional",
-                        "price_1SQGox2NNm10BnLCcROJSo91": "quant_elite",
-                    }
-                    tier = price_to_tier.get(price_id, 'individual')
-                    print(f"   Tier         : {tier}")
-                    print(f"   Subscription : {subscription_id}")
-                except Exception as e:
-                    print(f"❌ Error resolving tier: {e}")
-            else:
-                print("⚠️  No subscription ID in session")
-
             if not customer_email:
-                print("❌ No customer email in event — cannot provision key")
+                print("❌ No customer email in event — cannot provision")
                 _mark_event_processed(event_id, event_type, db)
                 return {"status": "no_email"}
 
-            existing_user = db.query(User).filter(User.email == customer_email).first()
-            if existing_user:
-                existing_user.tier = SubscriptionTier(tier)
-                existing_user.stripe_subscription_id = subscription_id
-                existing_user.subscription_status = 'active'
-                existing_user.email_verified = 1
-                db.commit()
-                target_user = existing_user
-            else:
-                target_user = User(
-                    email=customer_email,
-                    name=customer_name or customer_email.split('@')[0],
-                    tier=SubscriptionTier(tier),
-                    email_verified=1,
-                    stripe_subscription_id=subscription_id,
-                    subscription_status='active',
-                )
-                db.add(target_user)
-                db.commit()
-                db.refresh(target_user)
+            tier = _tier_for_subscription(subscription_id)
+            _provision_user(db, customer_email, customer_name, tier, subscription_id)
 
-            api_key_plain = f"cail_{tier}_{secrets.token_urlsafe(20)}"
-            api_key_hash = hashlib.sha256(api_key_plain.encode()).hexdigest()
-            db.add(APIKey(user_id=target_user.id, key_hash=api_key_hash))
-            db.commit()
-
-            # ── ACTION REQUIRED LOG ────────────────────────────────────────
-            # Railway log alert pattern: "ACTION REQUIRED"
+            # No key here: it is created and shown once on /success, never logged.
             print("=" * 56)
-            print("✅ ACTION REQUIRED — SEND API KEY MANUALLY")
+            print("✅ NEW SUBSCRIBER — key is shown once on the checkout success page")
             print(f"   To      : {customer_email}")
             print(f"   Name    : {customer_name or '(not provided)'}")
             print(f"   Tier    : {tier}")
-            print(f"   API Key : {api_key_plain}")
             print(f"   Session : {session_id}")
+            print("   If they report no key: POST /admin/keys/issue")
             print("=" * 56)
 
             _mark_event_processed(event_id, event_type, db)
