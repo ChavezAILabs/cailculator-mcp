@@ -122,7 +122,7 @@ brought in line with what the tools compute:
 ### Changed — ZDTP and the 1D Chavez Transform labeled as what they compute
 Both have exact closed forms that do not involve the zero-divisor property
 (`docs/ZDTP_CLOSED_FORM.md`; `docs/chavez_transform.md`, "What the shipped tools
-compute"). Paul chose to keep them, relabeled and marked experimental. No value changes,
+compute"). Both are kept, relabeled and marked experimental. No value changes,
 and no field is renamed or removed.
 - **1D Chavez value** (`chavez_transform` tool, `analyze_dataset`): T = Σᵢ dataᵢ·wᵢ with
   wᵢ = ∫₋₅⁵ e^{−(x−tᵢ)²}·8x²e^{−αx²}(1+x²)^{−d/2} dx, a fixed center-weighted sum. Pairs
@@ -141,7 +141,7 @@ and no field is renamed or removed.
   interaction "spans the full interaction space" (it reduces to
   2x₀(P+Q) − 2⟨P+Q,x⟩e₀), that HIGH convergence is "the signature of a genuine structural
   invariant", or the Chavez-then-ZDTP workflow. The Lean convergence theorem is described
-  as true but empty (its bound is the transform's own value); the stability bound is the
+  as holding trivially (its bound is the transform's own value); the stability bound is the
   substantive result. The RH critical-line convergence results are marked as under
   re-check.
 - quant_equity terminology: `chavez_transform` is described as a center-weighted sum, and
