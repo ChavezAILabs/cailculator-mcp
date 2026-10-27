@@ -117,7 +117,7 @@ This is a statement about products of elements within a gateway pair's span. It 
 The algebraic claims on this page (the zero divisor identities, the stability bound, the 1D kernel formula, the scalar channel) are formally proved. Claims about what the transform detects in data are empirical and, so far, not validated. The verification chain for the algebraic claims has three layers:
 
 **Layer 1 — Lean 4 proof (offline, static)**
-`ChavezTransform_genuine.lean` proves the stability bound and the exact 1D kernel formula (`K_Z_realToSed`, the "pattern invariance") from first principles. The proof was verified by Aristotle (Harmonic Math's independent Lean 4 verification engine) with zero sorry stubs. The file's convergence theorem is true but empty as stated: the bound it exhibits is the transform's own value. The stability bound is the substantive result.
+`ChavezTransform_genuine.lean` proves the stability bound and the exact 1D kernel formula (`K_Z_realToSed`, the "pattern invariance") from first principles. The proof was verified by Aristotle (Harmonic Math's independent Lean 4 verification engine) with zero sorry stubs. The file's convergence theorem holds trivially as stated: the bound it exhibits is the transform's own value. The stability bound is the substantive result.
 
 **Layer 2 — Hardcoded constants (attribution-linked)**
 The verified gateway coordinates are hardcoded as constants in `core/canonical_six.py`, with `BilateralCollapse.lean` as their explicit attribution source. The code does not compute which elements are zero divisors at runtime — this was determined once, formally, offline.
