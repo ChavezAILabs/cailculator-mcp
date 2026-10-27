@@ -3,10 +3,10 @@
   "tool": "get_version",
   "args": {},
   "verification": "recorded",
-  "source": "release v2.2.0",
+  "source": "release v2.2.1",
   "expected": {
     "success": true,
-    "version": "2.2.0",
+    "version": "2.2.1",
     "engine": "v2.0 High-Precision"
   },
   "expected_input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
