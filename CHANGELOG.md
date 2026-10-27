@@ -2,7 +2,7 @@
 
 All notable changes to the CAILculator MCP Server will be documented in this file.
 
-## [2.2.0] - Unreleased (target; not yet published)
+## [2.2.0] - 2026-10-27
 
 Golden test suite, response provenance, and real profile gates. Bundled with the
 August input-validation and `chavez_transform` doc fixes below. No change to the math:
